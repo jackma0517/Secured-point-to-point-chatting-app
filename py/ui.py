@@ -43,23 +43,43 @@ class Application(tk.Frame):
         self.lbl_mode.config(bg=root.cget('bg'), width=15, height=1)
         self.lbl_mode.pack(side='left')
 
+        # IP Config
         self.lbl_ip = tk.Label(master=self.fr_modes, text='IP: ')
         self.lbl_ip.pack(side='left')
         self.txt_ip = tk.Text(master=self.fr_modes)
         self.txt_ip.config(width=15, height=1)
         self.txt_ip.pack(side='left')
 
+        # Port Config
         self.lbl_port = tk.Label(master=self.fr_modes, text='Port: ')
         self.lbl_port.pack(side='left')
         self.txt_port = tk.Text(master=self.fr_modes)
         self.txt_port.config(width=15, height=1)
         self.txt_port.pack(side='left')
 
-        # Shared secret key
-        self.txt_secret_key = ScrolledText(self)
-        self.txt_secret_key.config(width=100, height=4)
-        self.txt_secret_key.pack(side='top')
 
+        # Textmessage boxes
+        self.fr_msg_boxes = tk.Frame(self)
+        self.fr_msg_boxes.pack()
+
+        # Shared secret key
+        self.lbl_secret_key = tk.Label(master=self.fr_msg_boxes, text='Shared Secret Key:')
+        self.lbl_secret_key.pack()
+        self.txt_secret_key = ScrolledText(master=self.fr_msg_boxes)
+        self.txt_secret_key.config(width=100, height=4)
+        self.txt_secret_key.pack()
+
+        self.lbl_sent = tk.Label(master=self.fr_msg_boxes, text='Data to be Sent:')
+        self.lbl_sent.pack()
+        self.txt_sent = ScrolledText(master=self.fr_msg_boxes)
+        self.txt_sent.config(width=100, height=4)
+        self.txt_sent.pack()
+
+        self.lbl_received = tk.Label(master=self.fr_msg_boxes, text='Data to be Received:')
+        self.lbl_received.pack()
+        self.txt_received = ScrolledText(master=self.fr_msg_boxes)
+        self.txt_received.config(width=100, height=4)
+        self.txt_received.pack()
 
         # End Me
         self.quit = tk.Button(self, text='QUIT', fg='red', command=root.destroy)
