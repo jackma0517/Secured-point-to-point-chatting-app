@@ -1,27 +1,30 @@
 import socket
 import threading
 import struct
-
-from logger import Logger
+import logging
 
 class Sender(threading.Thread):
 
-    def __init__(sender, socket, queue, conn):
+    def __init__(self, socket, queue, conn):
         threading.Thread.__init__(self)
-        sender.socket = socket
-        sender.queue = queue
-        sender.conn = conn
-        sender.keep_alive = True
+        self.socket = socket
+        self.queue = queue
+        self.conn = conn
+        self.keep_alive = True
 
-    def run(sender):
+    def run(self):
         #set socket to non-blocking
-        sender.socket.setblocking(0)
-        while (sender.keep_alive):
-            if not sender.queue.empty():
-                msg = sender.queue.get()
+        self.socket.setblocking(0)
+        while (self.keep_alive):
+            if not self.queue.empty():
+                msg = self.queue.get()
+                msg = struct.pack('>I', len(msg)) + msg
                 try:
-                    sender.socket.sendall(msg)
-                    Logger.log("Sending message over socket: "+ msg, sender.conn.is_server)
+                    self.socket.sendall(msg)
+                    Logger.log("Sending message over socket: "+ msg, self.conn.is_server)
                 except socket.error:
-                    sender.conn.broken_conn_callback()
-        sender.socket.close()
+                    Logger.log("error sending message over socket: " + socket.error.args[0])
+        self.socket.close()
+
+    def close(self):
+        self.keep_alive = False

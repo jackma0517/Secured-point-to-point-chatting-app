@@ -1,65 +1,88 @@
 import socket
 import threading
 
+from ui import *
 from Queue import Queue
-from logger import Logger
 from sender import Sender
 from receiver import Receiver
+from logger import Logger
 
 class Client(object):
 
-    def __init__(client, ip_addr, port, shared_key, broken_conn_callback, app):
-        client.ip_addr = ip_addr
-        client.port = port
-        client.shared_key = shared_key
-        client.broken_conn_callback = broken_conn_callback
-        client.app = app
-        client.is_server = False
+    def __init__(self, ip_addr, port, shared_key):
+        self.ip_addr = ip_addr
+        self.port = port
+        self.shared_key = shared_key
+        self.is_server = False
 
         #Queue: implements multi-producer, multi-consumer queues.
         #It is especially useful in threaded programming when information must be exchanged safely between multiple threads
-        client.out_queue = Queue(); #sending out queue
-        client.in_queue = Queue();  #receiving queue
-        client.sender = None
-        client.receiver = None
+        self.out_queue = Queue(); #sending out queue
+        self.in_queue = Queue();  #receiving queue
+        self.sender = None
+        self.receiver = None
 
-    def connect(client):
+        self.waiting = True
+        self.authenticated = False
+
+
+    def connect(self):
         try:
-            client.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             #SO_REUSEADDR flag tells the kernel to reuse a local socket in TIME_WAIT state, without waiting for its natural timeout to expire
-            client.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         except socket.error:
             return (-1, "Failed to Create Socket")
 
         #authenticate with server?
         try:
-            #bind socket to port
-            server.socket.bind('', client.port)
+            self.socket.settimeout(10)
+            self.socket.connect(self.ip_addr, self.port)
+            self.waiting = False
+            self.bind()
+
+            Logger.log("connected to server", self.is_server)
+            self.clear_queues()
+            return (0, "Connected to (%s, %i)" % (self.ip_addr, self.port))
         except socket.error:
-            return (-1, "Failed to bind socket to port: " + str(client.port))
+            self.authenticated = False
+            return (-1, "Could not connect to (%s, %i)" % (self.ip_addr, self.port))
 
-    def bind(client):
-        #client.sender = Sender(client.socket, client.out_queue, client)
-        #client.receiver = Receiver(client.socket, client.inqueue, client)
+        return (-1, "Could not connect to (%s, %i)" % (self.ip_addr, self.port))
 
-    def send(client, msg):
+
+    def clear_queues(self):
+        self.in_queue.queue.clear()
+        self.out_queue.queue.clear()
+
+    def bind(self):
+        self.sender = Sender(self.socket, self.send_queue, self)
+        self.receiver = Receiver(self.socket, self.receive_queue, self)
+        self.sender.start()
+        self.receiver.start()
+
+    def send(self, msg):
         #encrypted_msg =
-        client.out_queue.put(encrypted_msg)
+        self.out_queue.put(msg)
+        Logger.log("put message in send queue: " + msg, self.is_server)
 
-    def receive(client):
-        if (not client.in_queue.empty()):
-            msg = client.in_queue.get()
+    def receive(self):
+        if (not self.in_queue.empty()):
+            msg = self.in_queue.get()
+            Logger.log("Received decrypted msg: "+ msg, self.is_server)
             #msg = decrypt(msg, server.session_key)
             #integrity check?
             return msg
         else:
             return None
 
-    def close(client):
-        Logger.log("Connection closing", client.is_server)
-        client.in_queue.queue.clear()
-        client.out_queue.queue.clear()
-        if client.sender:
-            client.sender.close()
-        if client.receiver:
-            client.receiver.close()
+    def close(self):
+        Logger.log("Connection closing", self.is_server)
+        self.in_queue.queue.clear()
+        self.out_queue.queue.clear()
+        if self.sender:
+            self.sender.close()
+        if self.receiver:
+            self.receiver.close()
+        self.waiting = True
+        self.authenticated = False
