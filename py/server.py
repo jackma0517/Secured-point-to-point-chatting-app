@@ -4,7 +4,8 @@ import socket
 def connect(port):
 
     # next create a socket object
-    s = socket.socket()
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     print ("Socket successfully created")
 
 
@@ -36,7 +37,7 @@ def connect(port):
         if not data:
             break
 
-        # Send back data to client
+            # Send back data to client
         c.sendall(data)
 
     # Close the connection with the client

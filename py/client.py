@@ -4,7 +4,9 @@ import socket
 
 # Create a socket object
 def send(ip, port, msg):
-    s = socket.socket()
+
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 
     # Define the port on which you want to connect
     #port = 50000
