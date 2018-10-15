@@ -5,6 +5,8 @@
 
 import tkinter as tk
 from tkinter.scrolledtext import ScrolledText
+import client as client
+import server as server
 
 # The mode the program is operating in
 class Mode:
@@ -28,11 +30,6 @@ class Application(tk.Frame):
 
         self.create_widgets()
 
-        self.server = None
-        self.client = None
-        self.Message_receiver = None
-        self.debug = False
-        self.continue_pressed = False
 
     def create_widgets(self):
 
@@ -82,10 +79,9 @@ class Application(tk.Frame):
         self.txt_sent.pack()
 
         # Send Button
-        self.send_button = tk.Button(self, text='SEND', fg='green', command= self.send_message)
+        self.send_button = tk.Button(self, text='SEND', fg='green', command=self.send_message)
         self.send_button.place(rely=2.0, relx=2.0, x=0, y=0, anchor=tk.SE)
         self.send_button.pack()
-        self.refresh_ui()
 
         self.lbl_received = tk.Label(master=self.fr_msg_boxes, text='Data to be Received:')
         self.lbl_received.pack()
@@ -112,6 +108,9 @@ class Application(tk.Frame):
             # Disable the IP config
             self.txt_ip.config(background=root['bg'])
             self.txt_ip.config(state='disabled')
+            #server connect button
+            self.connect_server_button = tk.Button(self, text='CONNECT SERVER', fg='green', command=self.server_connect)
+            self.connect_server_button.pack(side='left')
         else:
             self.state.mode = Mode.CLIENT
             # Enable the IP config
@@ -120,13 +119,18 @@ class Application(tk.Frame):
         self.str_mode.set(self.state.mode)
 
     def send_message(self):
-        #data = self.text_sent.get(tk.SEL_FIRST, tk.SEL_LAST)
         if (self.state.mode == Mode.CLIENT):
-            #self.client.send(data)
-            print("hello")
+            response = client.send(str(self.txt_ip.get("1.0", "end-1c")), str(self.txt_port.get("1.0", "end-1c")), str(self.txt_sent.get("1.0", "end-1c")))
+            self.display_received_message(response)
         else:
-            #self.server.send(data)
-            print("hello")
+            response = server.send(str(self.txt_port.get("1.0", "end-1c")), str(self.txt_sent.get("1.0", "end-1c")))
+            self.display_received_message(response)
+
+    def display_received_message(self, response):
+        self.txt_received.insert("end-1c", response)
+
+    def server_connect(self):
+        server.connect(str(self.txt_port.get("1.0", "end-1c")))
 
 if __name__ == '__main__':
     root = tk.Tk()
