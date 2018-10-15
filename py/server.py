@@ -36,8 +36,8 @@ def connect(port):
         if not data:
             break
 
-            # Send back data to client
-            c.sendall(data)
+        # Send back data to client
+        c.sendall(data)
 
     # Close the connection with the client
     c.close()
