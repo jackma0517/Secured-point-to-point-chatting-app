@@ -24,6 +24,7 @@ class Receiver(threading.Thread):
                 data = self.socket.recv(1024).decode()
                 if (data):
                     print('Reciever received from socket: ' + str(data))
+                    self.queue.put(data)
             except:
                 continue
             
