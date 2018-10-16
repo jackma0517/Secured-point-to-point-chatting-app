@@ -4,6 +4,7 @@
 # Apologies if it offends your sensibilities
 import tkinter as tk
 from tkinter.scrolledtext import ScrolledText
+from tkinter import *
 
 from receiver import Receiver
 from sender import Sender
@@ -41,7 +42,8 @@ class Application(tk.Frame):
         self.receiver_q = queue.Queue()
         self.sender_q = queue.Queue()
 
-    
+        self.debug = False
+
     def is_initialized(self):
         """
         Checks whether connections are initialized
@@ -59,6 +61,18 @@ class Application(tk.Frame):
         # Mode Toggle Button
         self.bt_toggle = tk.Button(master=self.fr_modes, text='Toggle Mode', command=self.toggle_mode)
         self.bt_toggle.pack(side='left')
+
+        # Debug Toggle Button
+        self.debug_button_txt = tk.StringVar()
+        self.debug_button_txt.set("Debug Mode OFF")
+        self.btn_debug_toggle = tk.Button(master=self.fr_modes, textvariable=self.debug_button_txt, command=self.toggle_debug)
+        self.btn_debug_toggle.pack(side='left')
+
+        # Debug Continue Button
+        self.debug_continue_button = tk.Button(master=self.fr_modes, text='Continue', command=self.step)
+        self.debug_continue_button.pack(side='right')
+        self.debug_continue_button.visible = False
+        self.debug_continue_button.config(state=DISABLED)
 
         # Mode Text UI
         self.lbl_mode = tk.Label(master=self.fr_modes, textvariable=self.str_mode)
@@ -108,7 +122,7 @@ class Application(tk.Frame):
         self.txt_received = ScrolledText(master=self.fr_msg_boxes)
         self.txt_received.config(width=100, height=4)
         self.txt_received.pack()
-        
+
         # End Me
         self.quit = tk.Button(self, text='QUIT', fg='red', command=root.destroy)
         self.quit.place(rely=1.0, relx=1.0, x=0, y=0, anchor=tk.SE)
@@ -133,18 +147,14 @@ class Application(tk.Frame):
                 rec_msg = str(self.receiver_q.get())
                 self.set_msg_to_be_received(rec_msg)
                 print(rec_msg)
-            sent_msg = self.get_msg_to_be_sent()
-            print(sent_msg)
-            if (sent_msg):
-                self.sender_q.put(sent_msg)
         root.after(250, lambda: self.consume(root))
-    
+
     def get_msg_to_be_sent(self):
         return self.txt_sent.get('1.0', 'end-1c')
 
     def set_msg_to_be_received(self, msg):
         self.txt_received.insert('end-1c', msg)
-        
+
 
     def bootstrap_connection(self):
         self.receiver = Receiver(self.conn_socket, self.receiver_q)
@@ -161,7 +171,7 @@ class Application(tk.Frame):
 
     def client_connect(self):
         print('Client connect...')
-        # TODO: Move into its own thread?  
+        # TODO: Move into its own thread?
         #          this will block the UI thread
         port = self.get_port()
         ip = self.get_ip()
@@ -174,7 +184,7 @@ class Application(tk.Frame):
 
     def server_start(self):
         print('Starting server...')
-        # TODO: Move into its own thread?  
+        # TODO: Move into its own thread?
         #          this will block the UI thread
         port = self.get_port()
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -210,12 +220,30 @@ class Application(tk.Frame):
 
     def send_message(self):
         if (self.state.mode == Mode.CLIENT):
-            print('Client Mode')
+            sent_msg = self.get_msg_to_be_sent()
+            if (sent_msg):
+                self.sender_q.put(sent_msg)
         else:
-            print('Server Mode')
+            #Server Mode
+            sent_msg = self.get_msg_to_be_sent()
+            if (sent_msg):
+                self.sender_q.put(sent_msg)
 
     def display_received_message(self, response):
         self.txt_received.insert("end-1c", response)
+
+    def toggle_debug(self):
+        if(self.debug == False):
+            self.debug_continue_button.config(state=NORMAL)
+            self.debug_button_txt.set("Debug Mode ON")
+            self.debug = True
+        else:
+            self.debug_continue_button.config(state=DISABLED)
+            self.debug_button_txt.set("Debug Mode OFF")
+            self.debug = False
+
+    def step(self):
+        print("next step")
 
 
 if __name__ == '__main__':
