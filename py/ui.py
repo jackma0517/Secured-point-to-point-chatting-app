@@ -80,19 +80,13 @@ class Application(tk.Frame):
         self.send_button.place(rely=2.0, relx=2.0, x=0, y=0, anchor=tk.SE)
         self.send_button.pack()
 
-<<<<<<< HEAD
-        #connect client button
-        self.connect_client_button = tk.Button(self, text='CONNECT CLIENT', fg='green', command=self.client_connect)
-        self.connect_client_button.pack(side='bottom')
-=======
->>>>>>> 10453b412fa8b6832468da185af06c42321660af
 
         self.lbl_received = tk.Label(master=self.fr_msg_boxes, text='Data to be Received:')
         self.lbl_received.pack()
         self.txt_received = ScrolledText(master=self.fr_msg_boxes)
         self.txt_received.config(width=100, height=4)
         self.txt_received.pack()
-
+        
         # End Me
         self.quit = tk.Button(self, text='QUIT', fg='red', command=root.destroy)
         self.quit.place(rely=1.0, relx=1.0, x=0, y=0, anchor=tk.SE)
@@ -128,18 +122,16 @@ class Application(tk.Frame):
             self.txt_ip.config(background=root['bg'])
             self.txt_ip.config(state='disabled')
             #server connect button
-            self.connect_server_button = tk.Button(self, text='CONNECT SERVER', fg='green', command=self.server_connect)
-            self.connect_server_button.pack(side='bottom')
-            self.connect_client_button.destroy()
+            self.btn_server_start.pack()
+            self.btn_client_connect.pack_forget()
         else:
             self.state.mode = Mode.CLIENT
             # Enable the IP config
             self.txt_ip.config(background='white')
             self.txt_ip.config(state='normal')
-            #client connect button
-            self.connect_client_button = tk.Button(self, text='CONNECT CLIENT', fg='green', command=self.client_connect)
-            self.connect_client_button.pack(side='bottom')
-            self.connect_server_button.destroy()
+            self.btn_client_connect.pack()
+            self.btn_server_start.pack_forget()
+
         self.str_mode.set(self.state.mode)
 
     def send_message(self):
@@ -151,11 +143,8 @@ class Application(tk.Frame):
     def display_received_message(self, response):
         self.txt_received.insert("end-1c", response)
 
-    def client_connect(self):
-        print("connect client")
-
     def server_connect(self):
-        # Threading?
+        # Threading? 
         print('Connecting server')
 
 
