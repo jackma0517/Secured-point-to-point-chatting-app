@@ -19,6 +19,7 @@ class Mode:
     SERVER = 'SERVER'
     CLIENT = 'CLIENT'
 
+# Maintains state in the program
 class State:
     def __init__(self):
         self.mode = Mode.CLIENT
@@ -48,11 +49,13 @@ class Application(tk.Frame):
         """
         Checks whether connections are initialized
         """
-        # return (self.receiver != None) & (self.sender != None)
-        return self.conn_socket != None
+        return (self.receiver != None) & (self.sender != None)
 
 
     def create_widgets(self):
+        """
+        Code to generate the UI
+        """
 
         # Frame for Mode toggles and IP/Port
         self.fr_modes = tk.Frame(self)
@@ -137,7 +140,7 @@ class Application(tk.Frame):
 
     def consume(self, root):
         """
-        This is where we start reading/writing to the
+        This is where we start reading/writing to/from the
         Receiver and Sender
         """
         if self.is_initialized():
@@ -149,27 +152,20 @@ class Application(tk.Frame):
                 print(rec_msg)
         root.after(250, lambda: self.consume(root))
 
-    def get_msg_to_be_sent(self):
-        return self.txt_sent.get('1.0', 'end-1c')
-
-    def set_msg_to_be_received(self, msg):
-        self.txt_received.insert('end-1c', msg)
-
-
     def bootstrap_connection(self):
+        """
+        Initializes the receiver and sender threads
+        """
         self.receiver = Receiver(self.conn_socket, self.receiver_q)
         self.receiver.start()
         self.sender = Sender(self.conn_socket, self.sender_q)
         self.sender.start()
 
-    def get_port(self):
-        return self.txt_port.get('1.0', 'end-1c')
-
-    def get_ip(self):
-        return self.txt_ip.get('1.0', 'end-1c')
-
 
     def client_connect(self):
+        """
+        Starts up the client
+        """
         print('Client connect...')
         # TODO: Move into its own thread?
         #          this will block the UI thread
@@ -182,7 +178,11 @@ class Application(tk.Frame):
         self.bootstrap_connection()
         print('Client connected to server')
 
+
     def server_start(self):
+        """
+        Starts up the server
+        """
         print('Starting server...')
         # TODO: Move into its own thread?
         #          this will block the UI thread
@@ -200,6 +200,9 @@ class Application(tk.Frame):
             break
 
     def toggle_mode(self):
+        """
+        Toggles between the client and the server
+        """
         if (self.state.mode == Mode.CLIENT):
             self.state.mode = Mode.SERVER
             # Disable the IP config
@@ -219,6 +222,7 @@ class Application(tk.Frame):
         self.str_mode.set(self.state.mode)
 
     def send_message(self):
+        # TODO: Wire this up the the Sender
         if (self.state.mode == Mode.CLIENT):
             sent_msg = self.get_msg_to_be_sent()
             if (sent_msg):
@@ -229,8 +233,6 @@ class Application(tk.Frame):
             if (sent_msg):
                 self.sender_q.put(sent_msg)
 
-    def display_received_message(self, response):
-        self.txt_received.insert("end-1c", response)
 
     def toggle_debug(self):
         if(self.debug == False):
@@ -245,6 +247,24 @@ class Application(tk.Frame):
     def step(self):
         print("next step")
 
+    #######################
+    # UI HELPER FUNCTIONS #
+    ######################
+
+    def display_received_message(self, response):
+        self.txt_received.insert("end-1c", response)
+
+    def get_port(self):
+        return self.txt_port.get('1.0', 'end-1c')
+
+    def get_ip(self):
+        return self.txt_ip.get('1.0', 'end-1c')
+
+    def get_msg_to_be_sent(self):
+        return self.txt_sent.get('1.0', 'end-1c')
+
+    def set_msg_to_be_received(self, msg):
+        self.txt_received.insert('end-1c', msg)
 
 if __name__ == '__main__':
     root = tk.Tk()
