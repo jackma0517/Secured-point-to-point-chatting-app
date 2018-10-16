@@ -83,6 +83,10 @@ class Application(tk.Frame):
         self.send_button.place(rely=2.0, relx=2.0, x=0, y=0, anchor=tk.SE)
         self.send_button.pack()
 
+        #connect client button
+        self.connect_client_button = tk.Button(self, text='CONNECT CLIENT', fg='green', command=self.client_connect)
+        self.connect_client_button.pack(side='bottom')
+
         self.lbl_received = tk.Label(master=self.fr_msg_boxes, text='Data to be Received:')
         self.lbl_received.pack()
         self.txt_received = ScrolledText(master=self.fr_msg_boxes)
@@ -110,12 +114,17 @@ class Application(tk.Frame):
             self.txt_ip.config(state='disabled')
             #server connect button
             self.connect_server_button = tk.Button(self, text='CONNECT SERVER', fg='green', command=self.server_connect)
-            self.connect_server_button.pack(side='left')
+            self.connect_server_button.pack(side='bottom')
+            self.connect_client_button.destroy()
         else:
             self.state.mode = Mode.CLIENT
             # Enable the IP config
             self.txt_ip.config(background='white')
             self.txt_ip.config(state='normal')
+            #client connect button
+            self.connect_client_button = tk.Button(self, text='CONNECT CLIENT', fg='green', command=self.client_connect)
+            self.connect_client_button.pack(side='bottom')
+            self.connect_server_button.destroy()
         self.str_mode.set(self.state.mode)
 
     def send_message(self):
@@ -128,6 +137,9 @@ class Application(tk.Frame):
 
     def display_received_message(self, response):
         self.txt_received.insert("end-1c", response)
+
+    def client_connect(self):
+        print("connect client")
 
     def server_connect(self):
         server.connect(str(self.txt_port.get("1.0", "end-1c")))
