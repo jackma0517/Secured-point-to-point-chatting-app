@@ -67,17 +67,6 @@ class Application(tk.Frame):
                                     command=self.toggle_mode)
         self.bt_toggle.pack(side='left')
 
-        # Debug Toggle Button
-        self.debug_button_txt = tk.StringVar()
-        self.debug_button_txt.set("Debug Mode OFF")
-        self.btn_debug_toggle = tk.Button(master=self.fr_modes, textvariable=self.debug_button_txt, command=self.toggle_debug)
-        self.btn_debug_toggle.pack(side='left')
-
-        # Debug Continue Button
-        self.debug_continue_button = tk.Button(master=self.fr_modes, text='Continue', command=self.step)
-        self.debug_continue_button.pack(side='right')
-        self.debug_continue_button.visible = False
-        self.debug_continue_button.config(state=DISABLED)
 
         # Mode Text UI
         self.lbl_mode = tk.Label(master=self.fr_modes, textvariable=self.str_mode)
@@ -147,7 +136,6 @@ class Application(tk.Frame):
         self.lbl_received.pack()
         self.txt_received = ScrolledText(master=self.fr_msg_boxes)
         self.txt_received.config(width=100, height=4)
-<<<<<<< HEAD
         self.txt_received.pack() 
 
 
@@ -164,21 +152,22 @@ class Application(tk.Frame):
         self.txt_log.config(width=100, height=6, bg=root['bg'], state='disabled')
         self.txt_log.pack()
 
-        # Step by step button
-        self.btn_step = tk.Button(master=self.fr_step,
-                                        text='STEP')        
-        self.btn_step.pack()
-        self.chk_step_enable = tk.Checkbutton(master=self.fr_step,
-                                                text='Enable Step by Step')
-        self.chk_step_enable.pack()
+        # Debug Toggle Button
+        self.debug_button_txt = tk.StringVar()
+        self.debug_button_txt.set("Debug Mode OFF")
+        self.btn_debug_toggle = tk.Button(master=self.fr_step, textvariable=self.debug_button_txt, command=self.toggle_debug)
+        self.btn_debug_toggle.pack(side='left')
+
+        # Debug Continue Button
+        self.debug_continue_button = tk.Button(master=self.fr_step, text='Continue', command=self.step)
+        self.debug_continue_button.pack(side='right')
+        self.debug_continue_button.visible = False
+        self.debug_continue_button.config(state=DISABLED)
 
         # Gimpy hack to push the quit button downwards
         self.fr_space = tk.Frame(self)
         self.fr_space.config(height = 100)
         self.fr_space.pack()
-=======
-        self.txt_received.pack()
->>>>>>> 031d4a02bd05274bbcd0838445abfdbff4f2421b
 
         # End Me
         self.quit = tk.Button(self, text='QUIT', fg='red', command=root.destroy)
