@@ -20,10 +20,13 @@ class Receiver(threading.Thread):
         print('Receiver Running')
         # TODO: Does this work? 
         while (self.keep_alive):
-            data = self.socket.recv(1024)
-            if (data):
-                print('Reciever received from socket: ' + str(data))
-                self.queue.append(data)
+            try:
+                data = self.socket.recv(1024).decode()
+                if (data):
+                    print('Reciever received from socket: ' + str(data))
+            except:
+                continue
+            
 
     def close(self):
         print('closing')

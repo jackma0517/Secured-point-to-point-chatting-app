@@ -113,7 +113,6 @@ class Application(tk.Frame):
         self.quit = tk.Button(self, text='QUIT', fg='red', command=root.destroy)
         self.quit.place(rely=1.0, relx=1.0, x=0, y=0, anchor=tk.SE)
         self.quit.pack()
-        self.refresh_ui()
 
         self.btn_client_connect = tk.Button(self, text='Connect to Server', fg='green', command=self.client_connect)
         self.btn_client_connect.pack()
@@ -129,16 +128,29 @@ class Application(tk.Frame):
         """
         if self.is_initialized():
             print('Consuming...')
-            # if not self.receiver_q.empty():
-            #     print('Receiving msg')
-            # if not 
-            
+            if not self.receiver_q.empty():
+                print('Receiving msg')
+                rec_msg = str(self.receiver_q.get())
+                self.set_msg_to_be_received(rec_msg)
+                print(rec_msg)
+            sent_msg = self.get_msg_to_be_sent()
+            print(sent_msg)
+            if (sent_msg):
+                self.sender_q.put(sent_msg)
         root.after(250, lambda: self.consume(root))
+    
+    def get_msg_to_be_sent(self):
+        return self.txt_sent.get('1.0', 'end-1c')
+
+    def set_msg_to_be_received(self, msg):
+        self.txt_received.insert('end-1c', msg)
         
 
     def bootstrap_connection(self):
         self.receiver = Receiver(self.conn_socket, self.receiver_q)
+        self.receiver.start()
         self.sender = Sender(self.conn_socket, self.sender_q)
+        self.sender.start()
 
     def get_port(self):
         return self.txt_port.get('1.0', 'end-1c')
@@ -157,6 +169,7 @@ class Application(tk.Frame):
         s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         s.connect((ip, int(port)))
         self.conn_socket = s
+        self.bootstrap_connection()
         print('Client connected to server')
 
     def server_start(self):
@@ -172,15 +185,9 @@ class Application(tk.Frame):
         while True:
             c, _ = s.accept()
             self.conn_socket = c
+            self.bootstrap_connection()
             print('Server connected to client')
             break
-
-
-    def refresh_ui(self):
-        print('why do i exist')
-
-    def say_hi(self):
-        print('Hi folks\n')
 
     def toggle_mode(self):
         if (self.state.mode == Mode.CLIENT):
@@ -209,12 +216,6 @@ class Application(tk.Frame):
 
     def display_received_message(self, response):
         self.txt_received.insert("end-1c", response)
-
-    def server_connect(self):
-        # Threading? 
-        print('Connecting server')
-
-
 
 
 if __name__ == '__main__':

@@ -18,9 +18,8 @@ class Sender(threading.Thread):
         while (self.keep_alive):
             if not self.queue.empty():
                 msg = self.queue.get()
-                msg = struct.pack('>I', len(msg)) + msg
                 try:
-                    self.socket.sendall(msg)
+                    self.socket.send(msg.encode())
                     print('Sender sent msg successfuly')
                 except socket.error:
                     print('Sender socket error')
@@ -28,4 +27,4 @@ class Sender(threading.Thread):
 
     def close(self):
         print('closing')
-        #self.keep_alive = False
+        self.keep_alive = False
