@@ -4,24 +4,27 @@ import errno
 import struct
 import logging
 
-class Receiver(threading.Thead):
+class Receiver(threading.Thread):
 
-    def __init__(receiver, socket, queue, conn):
-        #threading.Thread.__init__(self)
-        #receiver.socket = socket
-        #receiver.queue = queue
-        #receiver.conn = conn
-        #receiver.keep_alive = True
+    def __init__(self, socket, queue):
+        print('Initializing Reciever')
+        threading.Thread.__init__(self)
+        self.socket = socket
+        self.queue = queue
+        
+        # TODO: What if we set to True?
+        self.socket.setblocking(False) 
+        self.keep_alive = True
 
     def run(self):
-        #self.socket.setblocking(0)
-
-        #while (self.keep_alive):
-            #try:
-
-            #except socket.error as e:
-                #Logger.log("error receiving message over socket: " + socket.error.args[0])
-        #self.socket.close()
+        print('Receiver Running')
+        # TODO: Does this work? 
+        while (self.keep_alive):
+            data = self.socket.recv(1024)
+            if (data):
+                print('Reciever received from socket: ' + str(data))
+                self.queue.append(data)
 
     def close(self):
-        #self.keep_alive = False
+        print('closing')
+        self.keep_alive = False

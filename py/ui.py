@@ -5,6 +5,14 @@
 import tkinter as tk
 from tkinter.scrolledtext import ScrolledText
 
+from receiver import Receiver
+from sender import Sender
+import server
+import client
+
+import socket
+import queue
+
 # The mode the program is operating in
 class Mode:
     SERVER = 'SERVER'
@@ -13,6 +21,7 @@ class Mode:
 class State:
     def __init__(self):
         self.mode = Mode.CLIENT
+        self.is_connected = False
 
 class Application(tk.Frame):
 
@@ -26,6 +35,19 @@ class Application(tk.Frame):
         self.str_mode.set(self.state.mode)
 
         self.create_widgets()
+        self.receiver = None
+        self.sender = None
+        self.conn_socket = None
+        self.receiver_q = queue.Queue()
+        self.sender_q = queue.Queue()
+
+    
+    def is_initialized(self):
+        """
+        Checks whether connections are initialized
+        """
+        # return (self.receiver != None) & (self.sender != None)
+        return self.conn_socket != None
 
 
     def create_widgets(self):
@@ -100,13 +122,58 @@ class Application(tk.Frame):
         self.btn_server_start = tk.Button(self, text='Start Server', fg='green', command=self.server_start)
 
 
+    def consume(self, root):
+        """
+        This is where we start reading/writing to the
+        Receiver and Sender
+        """
+        if self.is_initialized():
+            print('Consuming...')
+            # if not self.receiver_q.empty():
+            #     print('Receiving msg')
+            # if not 
+            
+        root.after(250, lambda: self.consume(root))
+        
+
+    def bootstrap_connection(self):
+        self.receiver = Receiver(self.conn_socket, self.receiver_q)
+        self.sender = Sender(self.conn_socket, self.sender_q)
+
+    def get_port(self):
+        return self.txt_port.get('1.0', 'end-1c')
+
+    def get_ip(self):
+        return self.txt_ip.get('1.0', 'end-1c')
+
+
     def client_connect(self):
-        # TODO: Stubs
         print('Client connect...')
+        # TODO: Move into its own thread?  
+        #          this will block the UI thread
+        port = self.get_port()
+        ip = self.get_ip()
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        s.connect((ip, int(port)))
+        self.conn_socket = s
+        print('Client connected to server')
 
     def server_start(self):
-        # TODO: Stub
         print('Starting server...')
+        # TODO: Move into its own thread?  
+        #          this will block the UI thread
+        port = self.get_port()
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        s.bind(('', int(port)))
+        s.listen()
+        print('Server listening on: ' + str(port))
+        while True:
+            c, _ = s.accept()
+            self.conn_socket = c
+            print('Server connected to client')
+            break
 
 
     def refresh_ui(self):
@@ -153,4 +220,5 @@ class Application(tk.Frame):
 if __name__ == '__main__':
     root = tk.Tk()
     app = Application(master=root)
+    app.consume(root)
     app.mainloop()
