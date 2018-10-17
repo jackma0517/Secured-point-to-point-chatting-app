@@ -3,10 +3,12 @@
 import math
 import base64
 from encryption import Encryption
+from hash_mac import *
 from Crypto.Hash import SHA256
 from Crypto import Random
 from Crypto.Cipher import AES
 from config import Mode 
+import pickle
 
 class Authentication:
 
@@ -30,12 +32,16 @@ class Authentication:
         if (mode == Mode.CLIENT):
 
             # First message to server in the form:
-            # "client_msg,ra"
+            # "client_msg, ra, HMAC"
             #       client_msg: "I'm client"
             #       ra        : client generated nonce
+            #       HMAC      : HMAC of all previous bytes with shared secret key Kab
+            ra   = Random.get_random_bytes(NUM_BYTES_NONCE)
+            hmac = get_hmac(client_auth_str + str(ra), shared_secret_key)
+            msg  = [client_auth_str, str(ra), hmac]
+            msg  = pickle.dumps(msg)
             ra = Random.get_random_bytes(NUM_BYTES_NONCE)
-            msg = client_auth_str + "," + str(ra)
-            print('Client: Sent ' + str(msg))
+            print('Client: Sent ' + (client_auth_str + "," + str(ra)))
             try:
                 sender_q.put(msg)#, True, TIMEOUT_DELAY)
             except :
@@ -43,12 +49,13 @@ class Authentication:
                 return None
 
             # Expect server response in the form:
-            # "rb,E("server_msg, ra, B", Kab)
+            # "rb, E("server_msg, ra, B", Kab), HMAC"
             #       rb        : new nonce from server
             #       server_msg: "I'm server"
             #       ra        : return of previously generated nonce
             #       B         : server generated half of diffie-hellman (g^b mod p)
             #       Kab       : shared secret key between client and server
+            #       HMAC      : HMAC of all previous bytes with shared secret key Kab
             try:
                 resp = receiver_q.get(True, TIMEOUT_DELAY)#self, True)#, TIMEOUT_DELAY)
             except:
@@ -56,7 +63,13 @@ class Authentication:
                 print("Timed out waiting for server's first reply")
                 return None
             try:
-                rb, ciphertext = resp.split(",")
+                resp       = pickle.load(resp)
+                rb         = resp[0]
+                ciphertext = resp[1]
+                hmac       = resp[2]
+                if (get_hmac(rb + ciphertext) != hmac):
+                    print("HMAC didn't match")
+                    return None
                 plaintext = Encryption.decrypt(ciphertext, shared_secret_key)
             except Exception as e:
                 print("Message from server wasn't formatted correctly")
@@ -65,8 +78,10 @@ class Authentication:
                 return None
             
             try:
-                server_msg, ra_reply, B = plaintext.split(",")
-                B = int(B)
+                plaintext = pickle.load(plaintext)
+                server_msg = plaintext[0]
+                ra_reply   = plaintext[1]
+                B          = int(plaintext[2])
                 if (server_msg != server_auth_str):
                     print("Message from server didn't say 'I'm server'")
                     return None
@@ -80,19 +95,23 @@ class Authentication:
                 return None
 
             # Send final authorization message in the form:
-            # E("client_msg, rb, A", Kab)
+            # "E("client_msg, rb, A", Kab), HMAC"
             #       client_msg: "I'm client"
             #       rb        : nonce received from server
             #       A         : client generated half of diffie-hellman (g^a mod p)
             #       Kab       : shared secret key between client and server
+            #       HMAC      : HMAC of all previous bytes with shared secret key Kab
             a = Random.get_random_bytes(NUM_BYTES_DH)
             a = int.from_bytes(a, byteorder='big')
             print('Client: a generated ' + str(a))
             A = pow(g, a, p)
-            plaintext = client_auth_str + "," + str(rb) + "," + str(A)
+            plaintext  = [client_auth_str, rb, str(A)]
+            plaintext  = pickle.dumps(plaintext)
             ciphertext = Encryption.encrypt(plaintext, shared_secret_key)
-            msg = ciphertext
-            print('Client: Generated ciphertext ' + msg)
+            hmac       = get_hmac(ciphertext, shared_secret_key)
+            msg        = [ciphertext, hmac]
+            msg        = pickle.dumps(msg)
+            print('Client: Generated ciphertext ' + ciphertext)
             try:
                 sender_q.put(msg)#self, msg, True, TIMEOUT_DELAY)
             except:
@@ -112,9 +131,10 @@ class Authentication:
         else:
 
             # Wait for message from client in the form:
-            # "client_msg, ra"
+            # "client_msg, ra, HMAC"
             #       client_msg: "I'm client"
             #       ra        : client generated nonce
+            #       HMAC      : HMAC of all previous bytes with shared secret key Kab
             while (1):
                 try:
                     resp = receiver_q.get(True, TIMEOUT_DELAY)#self, True)#, TIMEOUT_DELAY)
@@ -123,9 +143,15 @@ class Authentication:
                     print("Still waiting for client's first message")
                     continue
             try:
-                client_msg,ra = resp.split(",")
+                resp = pickle.load(resp)
+                client_msg = resp[0]
+                ra         = resp[1]
+                hmac       = resp[2]
                 if (client_msg != client_auth_str):
                     print("Message from client didn't say 'I'm client'")
+                    return None
+                if (hmac != get_hmac(client_msg + ra, shared_secret_key)):
+                    print("HMAC is incorrect")
                     return None
             except:
                 print("Message from client wasn't formatted correctly")
@@ -133,21 +159,25 @@ class Authentication:
                 return None
 
             # Send reply to client in the form:
-            # "rb,E("server_msg,ra,dh_b", Kab)
+            # "rb, E("server_msg,ra,dh_b", Kab), hmac
             #       rb        : server generated nonce
             #       server_msg: "I'm server"
             #       ra        : nonce received from client
             #       B         : server generated half of diffie-hellman (g^b mod p)
             #       Kab       : shared secret key between client and server
+            #       HMAC      : HMAC of all previous bytes with shared secret key Kab
             rb = Random.get_random_bytes(NUM_BYTES_NONCE)
             b = Random.get_random_bytes(NUM_BYTES_DH)
             b = int.from_bytes(b, byteorder='big')
             print('Server: b generated ' + str(b))
             B = pow(g, b, p)
-            plaintext = server_auth_str + "," + str(ra) + "," + str(B)
+            plaintext  = [server_auth_str, ra, str(B)]
+            plaintext  = pickle.dumps(plaintext)
             ciphertext = Encryption.encrypt(plaintext, shared_secret_key)
-            msg = str(rb) + ',' + str(ciphertext)
-            print('Server: Message: ' + msg)
+            hmac       = get_hmac(rb + ciphertext, shared_secret_key)
+            msg        = [rb, ciphertext, hmac]
+            msg        = pickle.dumps(msg)
+            print('Server: Message: ' + rb + ',' + ciphertext)
             try:
                 sender_q.put(msg)#, msg, True, TIMEOUT_DELAY)
             except:
@@ -156,23 +186,32 @@ class Authentication:
                 return None
 
             # Wait for final message from client in the form:
-            # E("client_msg, rb, A", Kab)
+            # "E("client_msg, rb, A", Kab), HMAC"
             #       client_msg: "I'm client"
             #       rb        : return of previously generated nonce
             #       A         : client generated half of diffie-hellman (g^a mod p)
             #       Kab       : shared secret key between client and server
+            #       HMAC      : HMAC of all previous bytes with shared secret key Kab
             try:
                 resp = receiver_q.get()#self, True, TIMEOUT_DELAY)
             except:
                 print("Timed out waiting for client's second message")
                 auth_error = True
                 return None
-            plaintext = Encryption.decrypt(resp, shared_secret_key)
-            print('Server: plaintext received: ' + str(plaintext))
             try:
-                client_msg, rb_reply, A = plaintext.split(",")
+                resp = pickle.load(resp)
+                ciphertext = resp[0]
+                hmac       = resp[1]
+                if (hmac != get_hmac(ciphertext, shared_secret_key)):
+                    print("HMAC is incorrect")
+                    return None 
+                plaintext  = Encryption.decrypt(ciphertext, shared_secret_key)
+                plaintext  = pickle.load(plaintext)
+                client_msg = plaintext[0]
+                rb_reply   = plaintext[1]
+                A          = int(plaintext[2])
                 print('Server: ' + str(A))
-                A = int(A)
+                print('Server: plaintext received: ' + plaintext)
                 if (client_msg != client_auth_str):
                     print("Message from client didn't say 'I'm client'")
                     return None

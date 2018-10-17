@@ -3,7 +3,7 @@ import hashlib
 import hmac
 import base64
 
-def get_hmac(hmac_key, msg):
+def get_hmac(msg, hmac_key):
     message = bytes(msg, 'utf-8')
     hmackey = bytes(hmac_key, 'utf-8')
 
