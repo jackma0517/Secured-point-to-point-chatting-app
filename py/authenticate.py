@@ -40,7 +40,7 @@ def authenticate(self, shared_secret_key):
         try:
             rb,ciphertext = resp.slit(",")
             rb = int(rb)
-            plaintext = Encryption.decrypt(ciphertext, shared_secret_key)
+            plaintext = Encryption.decrypt(self, ciphertext, shared_secret_key)
         except:
             print("Message from server wasn't formatted correctly")
             return False
@@ -68,7 +68,7 @@ def authenticate(self, shared_secret_key):
         a = Random.get_random_bytes(NUM_BYTES_DH)
         A = g**a % p
         plaintext = client_auth_str + "," + str(rb) + "," + str(A)
-        ciphertext = Encryption.encrypt(plaintext, shared_secret_key)
+        ciphertext = Encryption.encrypt(self, plaintext, shared_secret_key)
 
         msg = ciphertext
         self.send_message(msg) #TODO correctly send message here
@@ -109,7 +109,7 @@ def authenticate(self, shared_secret_key):
         b = Random.get_random_bytes(NUM_BYTES_DH)
         B = g**b % p
         plaintext = server_auth_str + "," + str(ra) + "," + str(B)
-        ciphertext = Encryption.encrypt(plaintext, shared_secret_key)
+        ciphertext = Encryption.encrypt(self, plaintext, shared_secret_key)
         msg = rb + ciphertext
         self.send_message(ciphertext) #TODO correctly send message here
 
@@ -120,7 +120,7 @@ def authenticate(self, shared_secret_key):
         #       A         : client generated half of diffie-hellman (g^a mod p)
         #       Kab       : shared secret key between client and server
         resp = self.get_message() #TODO correctly get message here
-        plaintext = Encryption.decrypt(resp, shared_secret_key)
+        plaintext = Encryption.decrypt(self, resp, shared_secret_key)
         try:
             client_msg, rb_reply, A = plaintext.split(",")
             rb_reply = int(rb_reply)
