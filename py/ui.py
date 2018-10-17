@@ -14,6 +14,9 @@ import client
 import socket
 import queue
 
+from authenticate import Authentication
+from encryption import Encryption
+
 # The mode the program is operating in
 class Mode:
     SERVER = 'SERVER'
@@ -43,6 +46,7 @@ class Application(tk.Frame):
         self.receiver_q = queue.Queue()
         self.sender_q = queue.Queue()
 
+        self.dh = 0
         self.debug = False
 
     def is_initialized(self):
