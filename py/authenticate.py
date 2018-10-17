@@ -7,10 +7,12 @@ from Crypto.Hash import SHA256
 from Crypto import Random
 from Crypto.Cipher import AES
 
+
 client_auth_str = "I'm client"
 server_auth_str = "I'm server"
 NUM_BYTES_DH    = 32 # Going for 256-bit a/b values in diffie-hellman
 NUM_BYTES_NONCE = 8  # Going for 64-bit nonce
+TIMEOUT_DELAY   = 5  # Timeout waiting on response after 5 seconds
 
 # Diffie-Hellman Group 14 2024-bit Key exchange values
 p = 0xFFFFFFFFFFFFFFFFC90FDAA22168C234C4C6628B80DC1CD129024E088A67CC74020BBEA63B139B22514A08798E3404DDEF9519B3CD3A431B302B0A6DF25F14374FE1356D6D51C245E485B576625E7EC6F44C42E9A637ED6B0BFF5CB6F406B7EDEE386BFB5A899FA5AE9F24117C4B1FE649286651ECE45B3DC2007CB8A163BF0598DA48361C55D39A69163FA8FD24CF5F83655D23DCA3AD961C62F356208552BB9ED529077096966D670C354E4ABC9804F1746C08CA18217C32905E462E36CE3BE39E772C180E86039B2783A2EC07A28FB5C55DF06F4C52C9DE2BCBF6955817183995497CEA956AE515D2261898FA051015728E5A8AACAA68FFFFFFFFFFFFFFFF
@@ -27,7 +29,11 @@ def authenticate(self, shared_secret_key):
         #       ra        : client generated nonce
         ra = Random.get_random_bytes(NUM_BYTES_NONCE)
         msg = client_auth_str + "," + str(ra)
-        self.send_message(msg) #TODO correctly send message here
+        try:
+            self.receiver_q.put(self, msg, True, TIMEOUT_DELAY)
+        except:
+            print("Timed out writing client's first message")
+            return False
 
         # Expect server response in the form:
         # "rb,E("server_msg, ra, B", Kab)
@@ -36,7 +42,11 @@ def authenticate(self, shared_secret_key):
         #       ra        : return of previously generated nonce
         #       B         : server generated half of diffie-hellman (g^b mod p)
         #       Kab       : shared secret key between client and server
-        resp = self.get_message() #TODO correctly get message here
+        try:
+            resp = self.receiver_q.get(self, True, TIMEOUT_DELAY)
+        except:
+            print("Timed out waiting for server's first reply")
+            return False
         try:
             rb,ciphertext = resp.slit(",")
             rb = int(rb)
@@ -69,9 +79,12 @@ def authenticate(self, shared_secret_key):
         A = g**a % p
         plaintext = client_auth_str + "," + str(rb) + "," + str(A)
         ciphertext = Encryption.encrypt(self, plaintext, shared_secret_key)
-
         msg = ciphertext
-        self.send_message(msg) #TODO correctly send message here
+        try:
+            self.receiver_q.put(self, msg, True, TIMEOUT_DELAY)
+        except:
+            print("Timed out writing client's second message")
+            return False
 
         # Calculate newly established session key
         dh = a**B % p
@@ -87,7 +100,11 @@ def authenticate(self, shared_secret_key):
         # "client_msg, ra"
         #       client_msg: "I'm client"
         #       ra        : client generated nonce
-        resp = self.get_message() #TODO correctly get message here
+        try:
+            resp = self.receiver_q.get(self, True, TIMEOUT_DELAY)
+        except:
+            print("Timed out waiting for client's first message")
+            return False
         try:
             client_msg,ra = resp.split(",")
             ra = int(ra)
@@ -111,7 +128,11 @@ def authenticate(self, shared_secret_key):
         plaintext = server_auth_str + "," + str(ra) + "," + str(B)
         ciphertext = Encryption.encrypt(self, plaintext, shared_secret_key)
         msg = rb + ciphertext
-        self.send_message(ciphertext) #TODO correctly send message here
+        try:
+            self.receiver_q.put(self, msg, True, TIMEOUT_DELAY)
+        except:
+            print("Timed out writing server's first message")
+            return False
 
         # Wait for final message from client in the form:
         # E("client_msg, rb, A", Kab)
@@ -119,7 +140,11 @@ def authenticate(self, shared_secret_key):
         #       rb        : return of previously generated nonce
         #       A         : client generated half of diffie-hellman (g^a mod p)
         #       Kab       : shared secret key between client and server
-        resp = self.get_message() #TODO correctly get message here
+        try:
+            resp = self.receiver_q.get(self, True, TIMEOUT_DELAY)
+        except:
+            print("Timed out waiting for client's second message")
+            return False
         plaintext = Encryption.decrypt(self, resp, shared_secret_key)
         try:
             client_msg, rb_reply, A = plaintext.split(",")
