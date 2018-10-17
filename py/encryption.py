@@ -1,4 +1,3 @@
-# written by jack
 import math
 import base64
 from Crypto.Hash import SHA256
