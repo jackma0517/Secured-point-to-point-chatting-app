@@ -35,7 +35,7 @@ class Authentication:
             ra = Random.get_random_bytes(NUM_BYTES_NONCE)
             msg = client_auth_str + "," + str(ra)
             try:
-                sender_q.put(self, msg)#, True, TIMEOUT_DELAY)
+                sender_q.put(msg)#, True, TIMEOUT_DELAY)
             except :
                 print("Timed out writing client's first message")
                 return None
@@ -54,7 +54,6 @@ class Authentication:
                 return None
             try:
                 rb,ciphertext = resp.slit(",")
-                rb = int(rb)
                 plaintext = Encryption.decrypt(ciphertext, shared_secret_key)
             except:
                 print("Message from server wasn't formatted correctly")
@@ -62,7 +61,6 @@ class Authentication:
             
             try:
                 server_msg, ra_reply, B = plaintext.split(",")
-                ra_reply = int(ra_reply)
                 B = int(B)
                 if (server_msg != server_auth_str):
                     print("Message from server didn't say 'I'm server'")
@@ -81,6 +79,8 @@ class Authentication:
             #       A         : client generated half of diffie-hellman (g^a mod p)
             #       Kab       : shared secret key between client and server
             a = Random.get_random_bytes(NUM_BYTES_DH)
+            a = int.from_bytes(a, byteorder='big')
+            print('a generated ' + str(a))
             A = g**a % p
             plaintext = client_auth_str + "," + str(rb) + "," + str(A)
             ciphertext = Encryption.encrypt(plaintext, shared_secret_key)
@@ -114,7 +114,6 @@ class Authentication:
                     continue
             try:
                 client_msg,ra = resp.split(",")
-                ra = int(ra)
                 if (client_msg != client_auth_str):
                     print("Message from client didn't say 'I'm client'")
                     return None
@@ -131,6 +130,8 @@ class Authentication:
             #       Kab       : shared secret key between client and server
             rb = Random.get_random_bytes(NUM_BYTES_NONCE)
             b = Random.get_random_bytes(NUM_BYTES_DH)
+            b = int.from_bytes(b, byteorder='big')
+            print('b generated ' + str(b))
             B = g**b % p
             plaintext = server_auth_str + "," + str(ra) + "," + str(B)
             ciphertext = Encryption.encrypt(plaintext, shared_secret_key)
@@ -151,15 +152,10 @@ class Authentication:
                 resp = receiver_q.get()#self, True, TIMEOUT_DELAY)
             except:
                 print("Timed out waiting for client's second message")
-<<<<<<< HEAD
                 return None
-=======
-                return False
->>>>>>> ee7c3c15beb02ca13435acfca352066782a49f22
             plaintext = Encryption.decrypt(resp, shared_secret_key)
             try:
                 client_msg, rb_reply, A = plaintext.split(",")
-                rb_reply = int(rb_reply)
                 A = int(A)
                 if (client_msg != client_auth_str):
                     print("Message from client didn't say 'I'm client'")

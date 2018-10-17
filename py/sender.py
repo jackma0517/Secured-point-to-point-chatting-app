@@ -17,6 +17,7 @@ class Sender(threading.Thread):
         print('Sender Running')
         while (self.keep_alive):
             if not self.queue.empty():
+                print('Sender has item in queue')
                 msg = self.queue.get()
                 try:
                     self.socket.send(msg.encode())

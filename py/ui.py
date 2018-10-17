@@ -188,8 +188,9 @@ class Application(tk.Frame):
             if (self.config.state == State.DISCONNECTED):# or self.config.state == State.AUTHENTICATING):
                 print('Authenticating...')
                 res = self.authentication.authenticate('abc', self.receiver_q, self.sender_q, self.config.mode)
-                if (not res):
+                if (res):
                     print('Authenticated')
+                    print(res)
             else:
                 print('Consuming...')
                 if not self.receiver_q.empty():
