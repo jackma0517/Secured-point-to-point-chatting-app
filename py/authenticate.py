@@ -81,7 +81,7 @@ class Authentication:
             a = Random.get_random_bytes(NUM_BYTES_DH)
             a = int.from_bytes(a, byteorder='big')
             print('a generated ' + str(a))
-            A = g**a % p
+            A = pow(g, a, p)
             plaintext = client_auth_str + "," + str(rb) + "," + str(A)
             ciphertext = Encryption.encrypt(plaintext, shared_secret_key)
             msg = ciphertext
@@ -92,7 +92,7 @@ class Authentication:
                 return None
 
             # Calculate newly established session key
-            dh = a**B % p
+            dh = pow(a, B, p)
 
             return dh
 
@@ -132,7 +132,7 @@ class Authentication:
             b = Random.get_random_bytes(NUM_BYTES_DH)
             b = int.from_bytes(b, byteorder='big')
             print('b generated ' + str(b))
-            B = g**b % p
+            B = pow(g, b, p)
             plaintext = server_auth_str + "," + str(ra) + "," + str(B)
             ciphertext = Encryption.encrypt(plaintext, shared_secret_key)
             msg = rb + ciphertext
@@ -167,5 +167,5 @@ class Authentication:
                 print("Message from client wasn't formatted correctly")
                 return None
             
-            dh = b**A % p
+            dh = pow(b, A, p)
             return dh
