@@ -66,7 +66,7 @@ def authenticate(self, shared_secret_key):
         #       A         : client generated half of diffie-hellman (g^a mod p)
         #       Kab       : shared secret key between client and server
         a = Random.get_random_bytes(NUM_BYTES_DH)
-        A = g^a % p
+        A = g**a % p
         plaintext = client_auth_str + "," + str(rb) + "," + str(A)
         ciphertext = Encryption.encrypt(plaintext, shared_secret_key)
 
@@ -74,7 +74,7 @@ def authenticate(self, shared_secret_key):
         self.send_message(msg) #TODO correctly send message here
 
         # Calculate newly established session key
-        dh = a^B % p
+        dh = a**B % p
 
         return dh
 
@@ -107,7 +107,7 @@ def authenticate(self, shared_secret_key):
         #       Kab       : shared secret key between client and server
         rb = Random.get_random_bytes(NUM_BYTES_NONCE)
         b = Random.get_random_bytes(NUM_BYTES_DH)
-        B = g^b % p
+        B = g**b % p
         plaintext = server_auth_str + "," + str(ra) + "," + str(B)
         ciphertext = Encryption.encrypt(plaintext, shared_secret_key)
         msg = rb + ciphertext
@@ -135,5 +135,5 @@ def authenticate(self, shared_secret_key):
             print("Message from client wasn't formatted correctly")
             return False
         
-        dh = b^A % p
+        dh = b**A % p
         return dh
