@@ -151,7 +151,11 @@ class Authentication:
                 resp = receiver_q.get()#self, True, TIMEOUT_DELAY)
             except:
                 print("Timed out waiting for client's second message")
+<<<<<<< HEAD
                 return None
+=======
+                return False
+>>>>>>> ee7c3c15beb02ca13435acfca352066782a49f22
             plaintext = Encryption.decrypt(resp, shared_secret_key)
             try:
                 client_msg, rb_reply, A = plaintext.split(",")
