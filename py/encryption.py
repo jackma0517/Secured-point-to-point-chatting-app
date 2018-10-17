@@ -28,7 +28,7 @@ class Encryption:
         AEShelper = AES.new(keyHash, AES.MODE_CBC, IV)
         msg = AEShelper.decrypt(cipherText[AES.block_size:])
         #should handle padding
-        return str(Encryption.trim(msg))
+        return Encryption.trim(msg).decode('UTF-8')
 
     @staticmethod
     def padding(raw):
