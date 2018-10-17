@@ -67,8 +67,8 @@ class Application(tk.Frame):
         self.fr_modes.pack()
 
         # Mode Toggle Button
-        self.bt_toggle = tk.Button(master=self.fr_modes, 
-                                    text='Toggle Mode', 
+        self.bt_toggle = tk.Button(master=self.fr_modes,
+                                    text='Toggle Mode',
                                     command=self.toggle_mode)
         self.bt_toggle.pack(side='left')
 
@@ -92,19 +92,19 @@ class Application(tk.Frame):
         self.txt_port.config(width=15, height=1)
         self.txt_port.pack(side='left')
 
-        
-        self.btn_client_connect = tk.Button(master=self.fr_modes, 
-                                            text='Connect to Server', 
-                                            fg='green', 
-                                            command=self.client_connect, 
+
+        self.btn_client_connect = tk.Button(master=self.fr_modes,
+                                            text='Connect to Server',
+                                            fg='green',
+                                            command=self.client_connect,
                                             height=1, width=15)
         self.btn_client_connect.pack()
 
         # Since client is default, don't add the server button
-        self.btn_server_start = tk.Button(master=self.fr_modes, 
-                                            text='Start Server', 
-                                            fg='green', 
-                                            command=self.server_start, 
+        self.btn_server_start = tk.Button(master=self.fr_modes,
+                                            text='Start Server',
+                                            fg='green',
+                                            command=self.server_start,
                                             height=1, width=15)
 
         # Textmessage boxes
@@ -112,7 +112,7 @@ class Application(tk.Frame):
         self.fr_msg_boxes.pack()
 
         # Shared secret key
-        self.lbl_secret_key = tk.Label(master=self.fr_msg_boxes, 
+        self.lbl_secret_key = tk.Label(master=self.fr_msg_boxes,
                                         text='Shared Secret Key:')
         self.lbl_secret_key.pack()
         self.txt_secret_key = ScrolledText(master=self.fr_msg_boxes)
@@ -120,7 +120,7 @@ class Application(tk.Frame):
         self.txt_secret_key.pack()
 
         # Data to be sent
-        self.lbl_sent = tk.Label(master=self.fr_msg_boxes, 
+        self.lbl_sent = tk.Label(master=self.fr_msg_boxes,
                                         text='Data to be Sent:')
         self.lbl_sent.pack()
         self.txt_sent = ScrolledText(master=self.fr_msg_boxes)
@@ -128,20 +128,20 @@ class Application(tk.Frame):
         self.txt_sent.pack()
 
         # Send Button
-        self.send_button = tk.Button(master=self.fr_msg_boxes, 
-                                        text='SEND', fg='green', 
+        self.send_button = tk.Button(master=self.fr_msg_boxes,
+                                        text='SEND', fg='green',
                                         command=self.send_message)
         self.send_button.place(rely=2.0, relx=2.0, x=0, y=0, anchor=tk.SE)
         self.send_button.pack()
 
 
-        # Data to be Recieved
-        self.lbl_received = tk.Label(master=self.fr_msg_boxes, 
-                                        text='Data to be Received:')
+        # Data Recieved
+        self.lbl_received = tk.Label(master=self.fr_msg_boxes,
+                                        text='Data Received:')
         self.lbl_received.pack()
         self.txt_received = ScrolledText(master=self.fr_msg_boxes)
         self.txt_received.config(width=100, height=4)
-        self.txt_received.pack() 
+        self.txt_received.pack()
 
 
         # Step by Step Frame
@@ -289,10 +289,12 @@ class Application(tk.Frame):
         if(self.debug == False):
             self.debug_continue_button.config(state=NORMAL)
             self.debug_button_txt.set("Debug Mode ON")
+            self.txt_log.config(state='normal')
             self.debug = True
         else:
             self.debug_continue_button.config(state=DISABLED)
             self.debug_button_txt.set("Debug Mode OFF")
+            self.txt_log.config(state='disabled')
             self.debug = False
 
     def step(self):
