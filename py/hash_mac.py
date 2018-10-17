@@ -1,4 +1,4 @@
-import encryption
+from encryption import Encryption
 
 import hashlib
 import hmac
@@ -14,10 +14,10 @@ def get_hmac(key, msg):
 def verify_hmac(key, ciphertext):
     #get last block of ciphertext which is the HMAC
     encrypted_hmac = ciphertext[-64:] #only the last block
-    hmac = decrypt(encrypted_hmac)
+    hmac = Encryption.decrypt(encrypted_hmac)
 
     #get expected hmac
-    plaintext = decrypt(ciphertext[:-64])#everything except the last block
-    expected_hmac = get_signature(key, plaintext)
+    plaintext = Encryption.decrypt(ciphertext[:-64])#everything except the last block
+    expected_hmac = get_hmac(key, plaintext)
 
     return HMAC.compare_digest(expected_hmac, hmac)
