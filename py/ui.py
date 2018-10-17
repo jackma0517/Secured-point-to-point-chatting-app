@@ -46,8 +46,7 @@ class Application(tk.Frame):
         self.receiver_q = queue.Queue()
         self.sender_q = queue.Queue()
         self.dh = None
-
-        self.dh = 0
+        self.auth_error = False
         self.debug = False
 
         self.authentication = Authentication()
@@ -188,13 +187,30 @@ class Application(tk.Frame):
         Receiver and Sender
         """
         if self.is_initialized():
-            if (self.config.state == State.DISCONNECTED):# or self.config.state == State.AUTHENTICATING):
+            if (self.config.state == State.DISCONNECTED):
+                # If we are disconnected, we run authentication on a thread.
+                # TODO: Use the secret key rather than 'abc'
                 threading.Thread(target = self.authentication.authenticate,
-                        args=('abc', self.receiver_q, self.sender_q, self.config.mode, self.dh)).start()
-                self.config.state == State.AUTHENTICATING
+                                args=(  'abc',              # shared secret key
+                                        self.receiver_q,    # receiver queue
+                                        self.sender_q,      # sender queue
+                                        self.config.mode,   # SERVER vs CLIENT mode
+                                        self.dh,            # the diffie-hellman key
+                                        self.auth_error     # whether we errored out
+                                     )).start()
+                self.config.state = State.AUTHENTICATING
+            elif (self.config.state == State.AUTHENTICATING and self.auth_error):
+                # If we are authenticating and we come into an error, 
+                # we reset back to the disconnected state and re-try authentication
+                self.config.state = State.DISCONNECTED
+                self.auth_error = False
             elif (self.config.state == State.AUTHENTICATING and self.dh is None):
+                # Still authenticating, don't do anything but wait
                 print('Still authenticating...')
             if (self.config.state == State.AUTHENTICATING and self.dh is not None):
+                # We are authentication, now we can send encrypted messages
+                # back and forth
+                print(self.dh)
                 print('Authenticated!')
                 self.config.state == State.AUTHENTICATED
             else:
