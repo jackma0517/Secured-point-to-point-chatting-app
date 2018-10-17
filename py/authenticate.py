@@ -10,7 +10,7 @@ from config import Mode
 
 class Authentication:
 
-    def authenticate(self, shared_secret_key, receiver_q, sender_q, mode, dh):
+    def authenticate(self, shared_secret_key, receiver_q, sender_q, mode, dh, auth_error):
         """
         Authenticates server and client, returns a session key
         """
@@ -50,8 +50,9 @@ class Authentication:
             #       B         : server generated half of diffie-hellman (g^b mod p)
             #       Kab       : shared secret key between client and server
             try:
-                resp = receiver_q.get()#self, True)#, TIMEOUT_DELAY)
+                resp = receiver_q.get(True, TIMEOUT_DELAY)#self, True)#, TIMEOUT_DELAY)
             except:
+                auth_error = True
                 print("Timed out waiting for server's first reply")
                 return None
             try:
@@ -60,6 +61,7 @@ class Authentication:
             except Exception as e:
                 print("Message from server wasn't formatted correctly")
                 print('Error: ' + str(e))
+                auth_error = True
                 return None
             
             try:
@@ -74,6 +76,7 @@ class Authentication:
             except Exception as e:
                 print("Message from server wasn't formatted correctly")
                 print('Error: ' + str(e))
+                auth_error = True
                 return None
 
             # Send final authorization message in the form:
@@ -94,6 +97,7 @@ class Authentication:
                 sender_q.put(msg)#self, msg, True, TIMEOUT_DELAY)
             except:
                 print("Timed out writing client's second message")
+                auth_error = True
                 return None
 
             # Calculate newly established session key
@@ -113,7 +117,7 @@ class Authentication:
             #       ra        : client generated nonce
             while (1):
                 try:
-                    resp = receiver_q.get()#self, True)#, TIMEOUT_DELAY)
+                    resp = receiver_q.get(True, TIMEOUT_DELAY)#self, True)#, TIMEOUT_DELAY)
                     break
                 except:
                     print("Still waiting for client's first message")
@@ -125,6 +129,7 @@ class Authentication:
                     return None
             except:
                 print("Message from client wasn't formatted correctly")
+                auth_error = True
                 return None
 
             # Send reply to client in the form:
@@ -147,6 +152,7 @@ class Authentication:
                 sender_q.put(msg)#, msg, True, TIMEOUT_DELAY)
             except:
                 print("Timed out writing server's first message")
+                auth_error = True
                 return None
 
             # Wait for final message from client in the form:
@@ -159,6 +165,7 @@ class Authentication:
                 resp = receiver_q.get()#self, True, TIMEOUT_DELAY)
             except:
                 print("Timed out waiting for client's second message")
+                auth_error = True
                 return None
             plaintext = Encryption.decrypt(resp, shared_secret_key)
             print('Server: plaintext received: ' + str(plaintext))
@@ -174,6 +181,7 @@ class Authentication:
                     return None
             except:
                 print("Message from client wasn't formatted correctly")
+                auth_error = True
                 return None
             
             dh = pow(b, A, p)
