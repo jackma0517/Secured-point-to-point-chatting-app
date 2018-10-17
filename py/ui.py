@@ -5,6 +5,7 @@
 import tkinter as tk
 from tkinter.scrolledtext import ScrolledText
 from tkinter import *
+from tkinter import messagebox
 
 from receiver import Receiver
 from sender import Sender
@@ -14,6 +15,7 @@ import client
 
 import socket
 import queue
+import threading
 
 from authenticate import Authentication
 from encryption import Encryption
@@ -44,6 +46,7 @@ class Application(tk.Frame):
         self.conn_socket = None
         self.receiver_q = queue.Queue()
         self.sender_q = queue.Queue()
+        self.dh = None
 
         self.dh = 0
         self.debug = False
@@ -188,11 +191,14 @@ class Application(tk.Frame):
         """
         if self.is_initialized():
             if (self.config.state == State.DISCONNECTED):# or self.config.state == State.AUTHENTICATING):
-                print('Authenticating...')
-                res = self.authentication.authenticate('abc', self.receiver_q, self.sender_q, self.config.mode)
-                if (res):
-                    print('Authenticated')
-                    print(res)
+                threading.Thread(target = self.authentication.authenticate,
+                        args=('abc', self.receiver_q, self.sender_q, self.config.mode, self.dh)).start()
+                self.config.state == State.AUTHENTICATING
+            elif (self.config.state == State.AUTHENTICATING and self.dh is None):
+                print('Still authenticating...')
+            if (self.config.state == State.AUTHENTICATING and self.dh is not None):
+                print('Authenticated!')
+                self.config.state == State.AUTHENTICATED
             else:
                 print('Consuming...')
                 if not self.receiver_q.empty():
@@ -222,14 +228,19 @@ class Application(tk.Frame):
         print('Client connect...')
         # TODO: Move into its own thread?
         #          this will block the UI thread
-        port = self.get_port()
-        ip = self.get_ip()
-        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        s.connect((ip, int(port)))
-        self.conn_socket = s
-        self.bootstrap_connection()
-        print('Client connected to server')
+        try:
+            port = self.get_port()
+            ip = self.get_ip()
+            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            s.connect((ip, int(port)))
+            self.conn_socket = s
+            self.bootstrap_connection()
+            print('Client connected to server')
+        except ValueError:
+            messagebox.showerror("Error", "Invlaid address/port number!")
+
+
 
 
     def server_start(self):
