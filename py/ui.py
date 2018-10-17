@@ -16,15 +16,13 @@ import queue
 
 from authenticate import Authentication
 from encryption import Encryption
+from config import Mode, State
 
-# The mode the program is operating in
-class Mode:
-    SERVER = 'SERVER'
-    CLIENT = 'CLIENT'
 
-# Maintains state in the program
-class State:
+# Maintains config in the program
+class Config:
     def __init__(self):
+        self.state = State.DISCONNECTED
         self.mode = Mode.CLIENT
         self.is_connected = False
 
@@ -33,11 +31,11 @@ class Application(tk.Frame):
     def __init__(self, master=None):
         super().__init__(master)
         self.pack()
-        self.state = State()
+        self.config = Config()
 
         # String Variables
         self.str_mode = tk.StringVar()
-        self.str_mode.set(self.state.mode)
+        self.str_mode.set(self.config.mode)
 
         self.create_widgets()
         self.receiver = None
@@ -48,6 +46,8 @@ class Application(tk.Frame):
 
         self.dh = 0
         self.debug = False
+
+        self.authentication = Authentication()
 
     def is_initialized(self):
         """
@@ -185,12 +185,18 @@ class Application(tk.Frame):
         Receiver and Sender
         """
         if self.is_initialized():
-            print('Consuming...')
-            if not self.receiver_q.empty():
-                print('Receiving msg')
-                rec_msg = str(self.receiver_q.get())
-                self.set_msg_to_be_received(rec_msg)
-                print(rec_msg)
+            if (self.config.state == State.DISCONNECTED):# or self.config.state == State.AUTHENTICATING):
+                print('Authenticating...')
+                res = self.authentication.authenticate('abc', self.receiver_q, self.sender_q, self.config.mode)
+                if (not res):
+                    print('Authenticated')
+            else:
+                print('Consuming...')
+                if not self.receiver_q.empty():
+                    print('Receiving msg')
+                    rec_msg = str(self.receiver_q.get())
+                    self.set_msg_to_be_received(rec_msg)
+                    print(rec_msg)
         root.after(250, lambda: self.consume(root))
 
     def bootstrap_connection(self):
@@ -244,8 +250,8 @@ class Application(tk.Frame):
         """
         Toggles between the client and the server
         """
-        if (self.state.mode == Mode.CLIENT):
-            self.state.mode = Mode.SERVER
+        if (self.config.mode == Mode.CLIENT):
+            self.config.mode = Mode.SERVER
             # Disable the IP config
             self.txt_ip.config(background=root['bg'])
             self.txt_ip.config(state='disabled')
@@ -253,18 +259,18 @@ class Application(tk.Frame):
             self.btn_server_start.pack()
             self.btn_client_connect.pack_forget()
         else:
-            self.state.mode = Mode.CLIENT
+            self.config.mode = Mode.CLIENT
             # Enable the IP config
             self.txt_ip.config(background='white')
             self.txt_ip.config(state='normal')
             self.btn_client_connect.pack()
             self.btn_server_start.pack_forget()
 
-        self.str_mode.set(self.state.mode)
+        self.str_mode.set(self.config.mode)
 
     def send_message(self):
         # TODO: Wire this up the the Sender
-        if (self.state.mode == Mode.CLIENT):
+        if (self.config.mode == Mode.CLIENT):
             sent_msg = self.get_msg_to_be_sent()
             if (sent_msg):
                 self.sender_q.put(sent_msg)
