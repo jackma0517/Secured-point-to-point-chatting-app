@@ -5,6 +5,7 @@
 import tkinter as tk
 from tkinter.scrolledtext import ScrolledText
 from tkinter import *
+from tkinter import messagebox
 
 from receiver import Receiver
 from sender import Sender
@@ -217,14 +218,19 @@ class Application(tk.Frame):
         print('Client connect...')
         # TODO: Move into its own thread?
         #          this will block the UI thread
-        port = self.get_port()
-        ip = self.get_ip()
-        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        s.connect((ip, int(port)))
-        self.conn_socket = s
-        self.bootstrap_connection()
-        print('Client connected to server')
+        try:
+            port = self.get_port()
+            ip = self.get_ip()
+            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            s.connect((ip, int(port)))
+            self.conn_socket = s
+            self.bootstrap_connection()
+            print('Client connected to server')
+        except ValueError:
+            messagebox.showerror("Error", "Invlaid address/port number!")
+            
+        
 
 
     def server_start(self):
@@ -234,18 +240,22 @@ class Application(tk.Frame):
         print('Starting server...')
         # TODO: Move into its own thread?
         #          this will block the UI thread
-        port = self.get_port()
-        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        s.bind(('', int(port)))
-        s.listen()
-        print('Server listening on: ' + str(port))
-        while True:
-            c, _ = s.accept()
-            self.conn_socket = c
-            self.bootstrap_connection()
-            print('Server connected to client')
-            break
+        try:
+            port = self.get_port()
+            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            s.bind(('', int(port)))
+            s.listen()
+            print('Server listening on: ' + str(port))
+            while True:
+                c, _ = s.accept()
+                self.conn_socket = c
+                self.bootstrap_connection()
+                print('Server connected to client')
+                break
+        except ValueError:
+            messagebox.showerror("Error", "Invlaid port number!")
+        
 
     def toggle_mode(self):
         """
