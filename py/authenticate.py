@@ -6,6 +6,7 @@ from Crypto.Hash import SHA256
 from Crypto import Random
 from Crypto.Cipher import AES
 from config import Mode 
+
 class Authentication:
 
     def authenticate(self, shared_secret_key, receiver_q, sender_q, mode):
