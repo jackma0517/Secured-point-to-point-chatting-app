@@ -192,7 +192,7 @@ class Application(tk.Frame):
                 threading.Thread(target = self.authentication.authenticate,
                         args=('abc', self.receiver_q, self.sender_q, self.config.mode, self.dh)).start()
                 self.config.state == State.AUTHENTICATING
-            elif (self.config.state == State.AUTHENTICATINg and self.dh is None):
+            elif (self.config.state == State.AUTHENTICATING and self.dh is None):
                 print('Still authenticating...')
             if (self.config.state == State.AUTHENTICATING and self.dh is not None):
                 print('Authenticated!')
