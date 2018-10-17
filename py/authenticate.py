@@ -1,4 +1,5 @@
 # Written by Sawyer
+
 import math
 import base64
 from encryption import Encryption
@@ -11,7 +12,7 @@ import pickle
 
 class Authentication:
 
-    def authenticate(self, shared_secret_key, receiver_q, sender_q, mode):
+    def authenticate(self, shared_secret_key, receiver_q, sender_q, mode, dh):
         """
         Authenticates server and client, returns a session key
         """
@@ -39,6 +40,8 @@ class Authentication:
             hmac = get_hmac(client_auth_str + str(ra), shared_secret_key)
             msg  = [client_auth_str, str(ra), hmac]
             msg  = pickle.dumps(msg)
+            ra = Random.get_random_bytes(NUM_BYTES_NONCE)
+            print('Client: Sent ' + (client_auth_str + "," + str(ra)))
             try:
                 sender_q.put(msg)#, True, TIMEOUT_DELAY)
             except :
@@ -67,8 +70,9 @@ class Authentication:
                     print("HMAC didn't match")
                     return None
                 plaintext = Encryption.decrypt(ciphertext, shared_secret_key)
-            except:
+            except Exception as e:
                 print("Message from server wasn't formatted correctly")
+                print('Error: ' + str(e))
                 return None
             
             try:
@@ -82,8 +86,9 @@ class Authentication:
                 if (ra_reply != ra):
                     print("Reterned nonce ra_reply not equal sent nonce ra")
                     return None
-            except:
+            except Exception as e:
                 print("Message from server wasn't formatted correctly")
+                print('Error: ' + str(e))
                 return None
 
             # Send final authorization message in the form:
@@ -95,7 +100,7 @@ class Authentication:
             #       HMAC      : HMAC of all previous bytes with shared secret key Kab
             a = Random.get_random_bytes(NUM_BYTES_DH)
             a = int.from_bytes(a, byteorder='big')
-            print('a generated ' + str(a))
+            print('Client: a generated ' + str(a))
             A = pow(g, a, p)
             plaintext  = [client_auth_str, rb, str(A)]
             plaintext  = pickle.dumps(plaintext)
@@ -103,6 +108,7 @@ class Authentication:
             hmac       = get_hmac(ciphertext, shared_secret_key)
             msg        = [ciphertext, hmac]
             msg        = pickle.dumps(msg)
+            print('Client: Generated ciphertext ' + ciphertext)
             try:
                 sender_q.put(msg)#self, msg, True, TIMEOUT_DELAY)
             except:
@@ -111,6 +117,7 @@ class Authentication:
 
             # Calculate newly established session key
             dh = pow(a, B, p)
+            print('Client: session key - ' + str(dh))
 
             return dh
 
@@ -157,7 +164,7 @@ class Authentication:
             rb = Random.get_random_bytes(NUM_BYTES_NONCE)
             b = Random.get_random_bytes(NUM_BYTES_DH)
             b = int.from_bytes(b, byteorder='big')
-            print('b generated ' + str(b))
+            print('Server: b generated ' + str(b))
             B = pow(g, b, p)
             plaintext  = [server_auth_str, ra, str(B)]
             plaintext  = pickle.dumps(plaintext)
@@ -165,6 +172,7 @@ class Authentication:
             hmac       = get_hmac(rb + ciphertext, shared_secret_key)
             msg        = [rb, ciphertext, hmac]
             msg        = pickle.dumps(msg)
+            print('Server: Message: ' + rb + ',' + ciphertext)
             try:
                 sender_q.put(msg)#, msg, True, TIMEOUT_DELAY)
             except:
@@ -193,8 +201,10 @@ class Authentication:
                 plaintext  = Encryption.decrypt(ciphertext, shared_secret_key)
                 plaintext  = pickle.load(plaintext)
                 client_msg = plaintext[0]
-                rb         = plaintext[1]
+                rb_reply   = plaintext[1]
                 A          = int(plaintext[2])
+                print('Server: ' + str(A))
+                print('Server: plaintext received: ' + plaintext)
                 if (client_msg != client_auth_str):
                     print("Message from client didn't say 'I'm client'")
                     return None

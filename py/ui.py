@@ -5,14 +5,17 @@
 import tkinter as tk
 from tkinter.scrolledtext import ScrolledText
 from tkinter import *
+from tkinter import messagebox
 
 from receiver import Receiver
 from sender import Sender
+from listener import Listener
 import server
 import client
 
 import socket
 import queue
+import threading
 
 from authenticate import Authentication
 from encryption import Encryption
@@ -43,9 +46,10 @@ class Application(tk.Frame):
         self.conn_socket = None
         self.receiver_q = queue.Queue()
         self.sender_q = queue.Queue()
-
-        self.dh = 0
+        self.dh = None
+        self.auth_error = False
         self.debug = False
+        self.server_listening = None
 
         self.authentication = Authentication()
 
@@ -66,8 +70,8 @@ class Application(tk.Frame):
         self.fr_modes.pack()
 
         # Mode Toggle Button
-        self.bt_toggle = tk.Button(master=self.fr_modes, 
-                                    text='Toggle Mode', 
+        self.bt_toggle = tk.Button(master=self.fr_modes,
+                                    text='Toggle Mode',
                                     command=self.toggle_mode)
         self.bt_toggle.pack(side='left')
 
@@ -91,19 +95,19 @@ class Application(tk.Frame):
         self.txt_port.config(width=15, height=1)
         self.txt_port.pack(side='left')
 
-        
-        self.btn_client_connect = tk.Button(master=self.fr_modes, 
-                                            text='Connect to Server', 
-                                            fg='green', 
-                                            command=self.client_connect, 
+
+        self.btn_client_connect = tk.Button(master=self.fr_modes,
+                                            text='Connect to Server',
+                                            fg='green',
+                                            command=self.client_connect,
                                             height=1, width=15)
         self.btn_client_connect.pack()
 
         # Since client is default, don't add the server button
-        self.btn_server_start = tk.Button(master=self.fr_modes, 
-                                            text='Start Server', 
-                                            fg='green', 
-                                            command=self.server_start, 
+        self.btn_server_start = tk.Button(master=self.fr_modes,
+                                            text='Start Server',
+                                            fg='green',
+                                            command=self.server_start,
                                             height=1, width=15)
 
         # Textmessage boxes
@@ -111,7 +115,7 @@ class Application(tk.Frame):
         self.fr_msg_boxes.pack()
 
         # Shared secret key
-        self.lbl_secret_key = tk.Label(master=self.fr_msg_boxes, 
+        self.lbl_secret_key = tk.Label(master=self.fr_msg_boxes,
                                         text='Shared Secret Key:')
         self.lbl_secret_key.pack()
         self.txt_secret_key = ScrolledText(master=self.fr_msg_boxes)
@@ -119,7 +123,7 @@ class Application(tk.Frame):
         self.txt_secret_key.pack()
 
         # Data to be sent
-        self.lbl_sent = tk.Label(master=self.fr_msg_boxes, 
+        self.lbl_sent = tk.Label(master=self.fr_msg_boxes,
                                         text='Data to be Sent:')
         self.lbl_sent.pack()
         self.txt_sent = ScrolledText(master=self.fr_msg_boxes)
@@ -127,20 +131,20 @@ class Application(tk.Frame):
         self.txt_sent.pack()
 
         # Send Button
-        self.send_button = tk.Button(master=self.fr_msg_boxes, 
-                                        text='SEND', fg='green', 
+        self.send_button = tk.Button(master=self.fr_msg_boxes,
+                                        text='SEND', fg='green',
                                         command=self.send_message)
         self.send_button.place(rely=2.0, relx=2.0, x=0, y=0, anchor=tk.SE)
         self.send_button.pack()
 
 
-        # Data to be Recieved
-        self.lbl_received = tk.Label(master=self.fr_msg_boxes, 
-                                        text='Data to be Received:')
+        # Data Recieved
+        self.lbl_received = tk.Label(master=self.fr_msg_boxes,
+                                        text='Data Received:')
         self.lbl_received.pack()
         self.txt_received = ScrolledText(master=self.fr_msg_boxes)
         self.txt_received.config(width=100, height=4)
-        self.txt_received.pack() 
+        self.txt_received.pack()
 
 
         # Step by Step Frame
@@ -185,12 +189,32 @@ class Application(tk.Frame):
         Receiver and Sender
         """
         if self.is_initialized():
-            if (self.config.state == State.DISCONNECTED):# or self.config.state == State.AUTHENTICATING):
-                print('Authenticating...')
-                res = self.authentication.authenticate('abc', self.receiver_q, self.sender_q, self.config.mode)
-                if (res):
-                    print('Authenticated')
-                    print(res)
+            if (self.config.state == State.DISCONNECTED):
+                # If we are disconnected, we run authentication on a thread.
+                # TODO: Use the secret key rather than 'abc'
+                threading.Thread(target = self.authentication.authenticate,
+                                args=(  'abc',              # shared secret key
+                                        self.receiver_q,    # receiver queue
+                                        self.sender_q,      # sender queue
+                                        self.config.mode,   # SERVER vs CLIENT mode
+                                        self.dh,            # the diffie-hellman key
+                                        self.auth_error     # whether we errored out
+                                     )).start()
+                self.config.state = State.AUTHENTICATING
+            elif (self.config.state == State.AUTHENTICATING and self.auth_error):
+                # If we are authenticating and we come into an error, 
+                # we reset back to the disconnected state and re-try authentication
+                self.config.state = State.DISCONNECTED
+                self.auth_error = False
+            elif (self.config.state == State.AUTHENTICATING and self.dh is None):
+                # Still authenticating, don't do anything but wait
+                print('Still authenticating...')
+            if (self.config.state == State.AUTHENTICATING and self.dh is not None):
+                # We are authentication, now we can send encrypted messages
+                # back and forth
+                print(self.dh)
+                print('Authenticated!')
+                self.config.state == State.AUTHENTICATED
             else:
                 print('Consuming...')
                 if not self.receiver_q.empty():
@@ -209,6 +233,9 @@ class Application(tk.Frame):
         self.sender = Sender(self.conn_socket, self.sender_q)
         self.sender.start()
 
+        self.server_Listening = Listener()
+        self.server_Listening.start()
+
 
     def client_connect(self):
         """
@@ -217,14 +244,19 @@ class Application(tk.Frame):
         print('Client connect...')
         # TODO: Move into its own thread?
         #          this will block the UI thread
-        port = self.get_port()
-        ip = self.get_ip()
-        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        s.connect((ip, int(port)))
-        self.conn_socket = s
-        self.bootstrap_connection()
-        print('Client connected to server')
+        try:
+            port = self.get_port()
+            ip = self.get_ip()
+            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            s.connect((ip, int(port)))
+            self.conn_socket = s
+            self.bootstrap_connection()
+            print('Client connected to server')
+        except ValueError:
+            messagebox.showerror("Error", "Invlaid address/port number!")
+
+
 
 
     def server_start(self):
@@ -234,18 +266,16 @@ class Application(tk.Frame):
         print('Starting server...')
         # TODO: Move into its own thread?
         #          this will block the UI thread
-        port = self.get_port()
-        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        s.bind(('', int(port)))
-        s.listen()
-        print('Server listening on: ' + str(port))
-        while True:
-            c, _ = s.accept()
-            self.conn_socket = c
-            self.bootstrap_connection()
-            print('Server connected to client')
-            break
+        try:
+            port = self.get_port()
+            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            s.bind(('', int(port)))
+            self.server_listening = Listener(s, port)
+            self.server_listening.start()
+        except ValueError:
+            messagebox.showerror("Error", "Invalid port number!")
+
 
     def toggle_mode(self):
         """
@@ -286,10 +316,12 @@ class Application(tk.Frame):
         if(self.debug == False):
             self.debug_continue_button.config(state=NORMAL)
             self.debug_button_txt.set("Debug Mode ON")
+            self.txt_log.config(state='normal')
             self.debug = True
         else:
             self.debug_continue_button.config(state=DISABLED)
             self.debug_button_txt.set("Debug Mode OFF")
+            self.txt_log.config(state='disabled')
             self.debug = False
 
     def step(self):
