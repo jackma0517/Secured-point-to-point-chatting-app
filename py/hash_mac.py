@@ -1,23 +1,24 @@
-from encryption import Encryption
+from encryption import *
+
 
 import hashlib
 import hmac
 import base64
 
-def get_hmac(key, msg):
+def get_hmac(hmac_key, msg):
     message = bytes(msg, 'utf-8')
-    secret_key = bytes(key, 'utf-8')
+    hmackey = bytes(hmac_key, 'utf-8')
 
-    hash = hmac.new(secret_key, message, hashlib.sha256)
-    return hash.hexdigest() #this hmac is 64 bits
+    hash = hmac.new(hmackey, message, hashlib.sha256)
+    return hash.hexdigest() #this hmac is 64
 
-def verify_hmac(key, ciphertext):
+def verify_hmac(hmac_key, ciphertext, shared_secret_key):
     #get last block of ciphertext which is the HMAC
     encrypted_hmac = ciphertext[-64:] #only the last block
-    hmac = Encryption.decrypt(encrypted_hmac)
+    hmac = decrypt(encrypted_hmac, shared_secret_key)
 
     #get expected hmac
-    plaintext = Encryption.decrypt(ciphertext[:-64])#everything except the last block
-    expected_hmac = get_hmac(key, plaintext)
+    plaintext = decrypt(ciphertext[:-64], shared_secret_key)#everything except the last block
+    expected_hmac = get_hmac(hmac_key, plaintext)
 
     return HMAC.compare_digest(expected_hmac, hmac)
