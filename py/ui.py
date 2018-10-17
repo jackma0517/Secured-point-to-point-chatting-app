@@ -9,6 +9,7 @@ from tkinter import messagebox
 
 from receiver import Receiver
 from sender import Sender
+from listener import Listener
 import server
 import client
 
@@ -48,6 +49,7 @@ class Application(tk.Frame):
         self.dh = None
         self.auth_error = False
         self.debug = False
+        self.server_listening = None
 
         self.authentication = Authentication()
 
@@ -231,6 +233,9 @@ class Application(tk.Frame):
         self.sender = Sender(self.conn_socket, self.sender_q)
         self.sender.start()
 
+        self.server_Listening = Listener()
+        self.server_Listening.start()
+
 
     def client_connect(self):
         """
@@ -250,8 +255,8 @@ class Application(tk.Frame):
             print('Client connected to server')
         except ValueError:
             messagebox.showerror("Error", "Invlaid address/port number!")
-            
-        
+
+
 
 
     def server_start(self):
@@ -266,17 +271,11 @@ class Application(tk.Frame):
             s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             s.bind(('', int(port)))
-            s.listen()
-            print('Server listening on: ' + str(port))
-            while True:
-                c, _ = s.accept()
-                self.conn_socket = c
-                self.bootstrap_connection()
-                print('Server connected to client')
-                break
+            self.server_listening = Listener(s, port)
+            self.server_listening.start()
         except ValueError:
-            messagebox.showerror("Error", "Invlaid port number!")
-        
+            messagebox.showerror("Error", "Invalid port number!")
+
 
     def toggle_mode(self):
         """
