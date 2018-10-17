@@ -1,4 +1,5 @@
 # Written by Sawyer
+
 import math
 import base64
 from encryption import Encryption
@@ -9,7 +10,7 @@ from config import Mode
 
 class Authentication:
 
-    def authenticate(self, shared_secret_key, receiver_q, sender_q, mode):
+    def authenticate(self, shared_secret_key, receiver_q, sender_q, mode, dh):
         """
         Authenticates server and client, returns a session key
         """
@@ -34,6 +35,7 @@ class Authentication:
             #       ra        : client generated nonce
             ra = Random.get_random_bytes(NUM_BYTES_NONCE)
             msg = client_auth_str + "," + str(ra)
+            print('Client: Sent ' + str(msg))
             try:
                 sender_q.put(msg)#, True, TIMEOUT_DELAY)
             except :
@@ -53,10 +55,11 @@ class Authentication:
                 print("Timed out waiting for server's first reply")
                 return None
             try:
-                rb,ciphertext = resp.slit(",")
+                rb, ciphertext = resp.split(",")
                 plaintext = Encryption.decrypt(ciphertext, shared_secret_key)
-            except:
+            except Exception as e:
                 print("Message from server wasn't formatted correctly")
+                print('Error: ' + str(e))
                 return None
             
             try:
@@ -68,8 +71,9 @@ class Authentication:
                 if (ra_reply != ra):
                     print("Reterned nonce ra_reply not equal sent nonce ra")
                     return None
-            except:
+            except Exception as e:
                 print("Message from server wasn't formatted correctly")
+                print('Error: ' + str(e))
                 return None
 
             # Send final authorization message in the form:
@@ -80,11 +84,12 @@ class Authentication:
             #       Kab       : shared secret key between client and server
             a = Random.get_random_bytes(NUM_BYTES_DH)
             a = int.from_bytes(a, byteorder='big')
-            print('a generated ' + str(a))
+            print('Client: a generated ' + str(a))
             A = pow(g, a, p)
             plaintext = client_auth_str + "," + str(rb) + "," + str(A)
             ciphertext = Encryption.encrypt(plaintext, shared_secret_key)
             msg = ciphertext
+            print('Client: Generated ciphertext ' + msg)
             try:
                 sender_q.put(msg)#self, msg, True, TIMEOUT_DELAY)
             except:
@@ -93,6 +98,7 @@ class Authentication:
 
             # Calculate newly established session key
             dh = pow(a, B, p)
+            print('Client: session key - ' + str(dh))
 
             return dh
 
@@ -131,11 +137,12 @@ class Authentication:
             rb = Random.get_random_bytes(NUM_BYTES_NONCE)
             b = Random.get_random_bytes(NUM_BYTES_DH)
             b = int.from_bytes(b, byteorder='big')
-            print('b generated ' + str(b))
+            print('Server: b generated ' + str(b))
             B = pow(g, b, p)
             plaintext = server_auth_str + "," + str(ra) + "," + str(B)
             ciphertext = Encryption.encrypt(plaintext, shared_secret_key)
-            msg = rb + ciphertext
+            msg = str(rb) + ',' + str(ciphertext)
+            print('Server: Message: ' + msg)
             try:
                 sender_q.put(msg)#, msg, True, TIMEOUT_DELAY)
             except:
@@ -154,8 +161,10 @@ class Authentication:
                 print("Timed out waiting for client's second message")
                 return None
             plaintext = Encryption.decrypt(resp, shared_secret_key)
+            print('Server: plaintext received: ' + str(plaintext))
             try:
                 client_msg, rb_reply, A = plaintext.split(",")
+                print('Server: ' + str(A))
                 A = int(A)
                 if (client_msg != client_auth_str):
                     print("Message from client didn't say 'I'm client'")

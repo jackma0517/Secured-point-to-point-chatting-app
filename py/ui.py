@@ -43,6 +43,7 @@ class Application(tk.Frame):
         self.conn_socket = None
         self.receiver_q = queue.Queue()
         self.sender_q = queue.Queue()
+        self.dh = None
 
         self.dh = 0
         self.debug = False
@@ -186,11 +187,13 @@ class Application(tk.Frame):
         """
         if self.is_initialized():
             if (self.config.state == State.DISCONNECTED):# or self.config.state == State.AUTHENTICATING):
-                print('Authenticating...')
-                res = self.authentication.authenticate('abc', self.receiver_q, self.sender_q, self.config.mode)
-                if (res):
-                    print('Authenticated')
-                    print(res)
+                res = self.authentication.authenticate('abc', self.receiver_q, self.sender_q, self.config.mode, self.dh)
+                self.config.state == State.AUTHENTICATING
+            elif (self.config.state == State.AUTHENTICATINg and self.dh is None):
+                print('Still authenticating...')
+            if (self.config.state == State.AUTHENTICATING and self.dh is not None):
+                print('Authenticated!')
+                self.config.state == State.AUTHENTICATED
             else:
                 print('Consuming...')
                 if not self.receiver_q.empty():
