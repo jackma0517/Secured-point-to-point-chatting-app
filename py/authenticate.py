@@ -35,8 +35,8 @@ class Authentication:
             ra = Random.get_random_bytes(NUM_BYTES_NONCE)
             msg = client_auth_str + "," + str(ra)
             try:
-                sender_q.put(self, msg, True, TIMEOUT_DELAY)
-            except:
+                sender_q.put(self, msg)#, True, TIMEOUT_DELAY)
+            except :
                 print("Timed out writing client's first message")
                 return None
 
@@ -48,14 +48,14 @@ class Authentication:
             #       B         : server generated half of diffie-hellman (g^b mod p)
             #       Kab       : shared secret key between client and server
             try:
-                resp = receiver_q.get(self, True, TIMEOUT_DELAY)
+                resp = receiver_q.get()#self, True)#, TIMEOUT_DELAY)
             except:
                 print("Timed out waiting for server's first reply")
                 return None
             try:
                 rb,ciphertext = resp.slit(",")
                 rb = int(rb)
-                plaintext = Encryption.decrypt(self, ciphertext, shared_secret_key)
+                plaintext = Encryption.decrypt(ciphertext, shared_secret_key)
             except:
                 print("Message from server wasn't formatted correctly")
                 return None
@@ -83,10 +83,10 @@ class Authentication:
             a = Random.get_random_bytes(NUM_BYTES_DH)
             A = g**a % p
             plaintext = client_auth_str + "," + str(rb) + "," + str(A)
-            ciphertext = Encryption.encrypt(self, plaintext, shared_secret_key)
+            ciphertext = Encryption.encrypt(plaintext, shared_secret_key)
             msg = ciphertext
             try:
-                sender_q.put(self, msg, True, TIMEOUT_DELAY)
+                sender_q.put(msg)#self, msg, True, TIMEOUT_DELAY)
             except:
                 print("Timed out writing client's second message")
                 return None
@@ -107,7 +107,7 @@ class Authentication:
             #       ra        : client generated nonce
             while (1):
                 try:
-                    resp = receiver_q.get(self, True, TIMEOUT_DELAY)
+                    resp = receiver_q.get()#self, True)#, TIMEOUT_DELAY)
                     break
                 except:
                     print("Still waiting for client's first message")
@@ -133,10 +133,10 @@ class Authentication:
             b = Random.get_random_bytes(NUM_BYTES_DH)
             B = g**b % p
             plaintext = server_auth_str + "," + str(ra) + "," + str(B)
-            ciphertext = Encryption.encrypt(self, plaintext, shared_secret_key)
+            ciphertext = Encryption.encrypt(plaintext, shared_secret_key)
             msg = rb + ciphertext
             try:
-                sender_q.put(self, msg, True, TIMEOUT_DELAY)
+                sender_q.put(msg)#, msg, True, TIMEOUT_DELAY)
             except:
                 print("Timed out writing server's first message")
                 return None
@@ -148,11 +148,11 @@ class Authentication:
             #       A         : client generated half of diffie-hellman (g^a mod p)
             #       Kab       : shared secret key between client and server
             try:
-                resp = receiver_q.get(self, True, TIMEOUT_DELAY)
+                resp = receiver_q.get()#self, True, TIMEOUT_DELAY)
             except:
                 print("Timed out waiting for client's second message")
                 return None
-            plaintext = Encryption.decrypt(self, resp, shared_secret_key)
+            plaintext = Encryption.decrypt(resp, shared_secret_key)
             try:
                 client_msg, rb_reply, A = plaintext.split(",")
                 rb_reply = int(rb_reply)
