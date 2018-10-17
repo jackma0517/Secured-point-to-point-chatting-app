@@ -8,6 +8,7 @@ from tkinter import *
 
 from receiver import Receiver
 from sender import Sender
+from listener import Listener
 import server
 import client
 
@@ -46,6 +47,7 @@ class Application(tk.Frame):
 
         self.dh = 0
         self.debug = False
+        self.server_listening = None
 
         self.authentication = Authentication()
 
@@ -209,6 +211,9 @@ class Application(tk.Frame):
         self.sender = Sender(self.conn_socket, self.sender_q)
         self.sender.start()
 
+        self.server_Listening = Listener()
+        self.server_Listening.start()
+
 
     def client_connect(self):
         """
@@ -234,18 +239,16 @@ class Application(tk.Frame):
         print('Starting server...')
         # TODO: Move into its own thread?
         #          this will block the UI thread
-        port = self.get_port()
-        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        s.bind(('', int(port)))
-        s.listen()
-        print('Server listening on: ' + str(port))
-        while True:
-            c, _ = s.accept()
-            self.conn_socket = c
-            self.bootstrap_connection()
-            print('Server connected to client')
-            break
+        try:
+            port = self.get_port()
+            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            s.bind(('', int(port)))
+            self.server_listening = Listener(s, port)
+            self.server_listening.start()
+        except ValueError:
+            messagebox.showerror("Error", "Invalid port number!")
+
 
     def toggle_mode(self):
         """
