@@ -37,7 +37,7 @@ class Authentication:
                 sender_q.put(self, msg, True, TIMEOUT_DELAY)
             except:
                 print("Timed out writing client's first message")
-                return False
+                return None
 
             # Expect server response in the form:
             # "rb,E("server_msg, ra, B", Kab)
@@ -50,14 +50,14 @@ class Authentication:
                 resp = receiver_q.get(self, True, TIMEOUT_DELAY)
             except:
                 print("Timed out waiting for server's first reply")
-                return False
+                return None
             try:
                 rb,ciphertext = resp.slit(",")
                 rb = int(rb)
                 plaintext = Encryption.decrypt(self, ciphertext, shared_secret_key)
             except:
                 print("Message from server wasn't formatted correctly")
-                return False
+                return None
             
             try:
                 server_msg, ra_reply, B = plaintext.split(",")
@@ -65,13 +65,13 @@ class Authentication:
                 B = int(B)
                 if (server_msg != server_auth_str):
                     print("Message from server didn't say 'I'm server'")
-                    return False
+                    return None
                 if (ra_reply != ra):
                     print("Reterned nonce ra_reply not equal sent nonce ra")
-                    return False
+                    return None
             except:
                 print("Message from server wasn't formatted correctly")
-                return False
+                return None
 
             # Send final authorization message in the form:
             # E("client_msg, rb, A", Kab)
@@ -88,7 +88,7 @@ class Authentication:
                 sender_q.put(self, msg, True, TIMEOUT_DELAY)
             except:
                 print("Timed out writing client's second message")
-                return False
+                return None
 
             # Calculate newly established session key
             dh = a**B % p
@@ -116,10 +116,10 @@ class Authentication:
                 ra = int(ra)
                 if (client_msg != client_auth_str):
                     print("Message from client didn't say 'I'm client'")
-                    return False
+                    return None
             except:
                 print("Message from client wasn't formatted correctly")
-                return False
+                return None
 
             # Send reply to client in the form:
             # "rb,E("server_msg,ra,dh_b", Kab)
@@ -138,7 +138,7 @@ class Authentication:
                 sender_q.put(self, msg, True, TIMEOUT_DELAY)
             except:
                 print("Timed out writing server's first message")
-                return False
+                return None
 
             # Wait for final message from client in the form:
             # E("client_msg, rb, A", Kab)
@@ -150,7 +150,7 @@ class Authentication:
                 resp = receiver_q.get(self, True, TIMEOUT_DELAY)
             except:
                 print("Timed out waiting for client's second message")
-                return False
+                return None
             plaintext = Encryption.decrypt(self, resp, shared_secret_key)
             try:
                 client_msg, rb_reply, A = plaintext.split(",")
@@ -158,13 +158,13 @@ class Authentication:
                 A = int(A)
                 if (client_msg != client_auth_str):
                     print("Message from client didn't say 'I'm client'")
-                    return False
+                    return None
                 if (rb_reply != rb):
                     print("Reterned nonce rb_reply not equal sent nonce rb")
-                    return False
+                    return None
             except:
                 print("Message from client wasn't formatted correctly")
-                return False
+                return None
             
             dh = b**A % p
             return dh
