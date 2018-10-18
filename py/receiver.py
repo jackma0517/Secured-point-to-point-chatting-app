@@ -24,7 +24,9 @@ class Receiver(threading.Thread):
                 data = self.socket.recv(1024)
                 if (data):
                     if self.authentication:
-                        data = Encryption.decryptVerify(data, self.key)
+                        #dont use hmac version
+                        #data = Encryption.decryptVerify(data, self.key)
+                        data = Encryption.decrypt(data, self.key)
                     print('Reciever received from socket: ' + str(data))
                     self.queue.put(data)
             except:
