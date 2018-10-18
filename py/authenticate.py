@@ -8,15 +8,8 @@ from hash_mac import *
 from Crypto.Hash import SHA256
 from Crypto import Random
 from Crypto.Cipher import AES
-<<<<<<< HEAD
-from config import Mode
-=======
 from config import Mode, AuthResult
->>>>>>> 2cec4399d656cc7c6a11795933a0f80fcbcfd4cd
 import pickle
-
-import logging
-import text_handler
 
 class Authentication:
 
@@ -31,7 +24,7 @@ class Authentication:
         TIMEOUT_DELAY   = 5  # Timeout waiting on response after 5 seconds
 
         print('Authenticating')
-        logging.info('Authenticating')
+
         # Diffie-Hellman Group 14 2024-bit Key exchange values
         p = 0xFFFFFFFFFFFFFFFFC90FDAA22168C234C4C6628B80DC1CD129024E088A67CC74020BBEA63B139B22514A08798E3404DDEF9519B3CD3A431B302B0A6DF25F14374FE1356D6D51C245E485B576625E7EC6F44C42E9A637ED6B0BFF5CB6F406B7EDEE386BFB5A899FA5AE9F24117C4B1FE649286651ECE45B3DC2007CB8A163BF0598DA48361C55D39A69163FA8FD24CF5F83655D23DCA3AD961C62F356208552BB9ED529077096966D670C354E4ABC9804F1746C08CA18217C32905E462E36CE3BE39E772C180E86039B2783A2EC07A28FB5C55DF06F4C52C9DE2BCBF6955817183995497CEA956AE515D2261898FA051015728E5A8AACAA68FFFFFFFFFFFFFFFF
         g = 0x2
@@ -76,26 +69,13 @@ class Authentication:
                 resp       = pickle.loads(resp)
                 rb         = resp[0]
                 ciphertext = resp[1]
-<<<<<<< HEAD
-                # hmac       = resp[2]
-                # if (verify_hmac(ciphertext, hmac, shared_secret_key)):
-                #     print("HMAC is incorrect")
-                #     return None
-=======
->>>>>>> 2cec4399d656cc7c6a11795933a0f80fcbcfd4cd
                 plaintext = Encryption.decrypt(ciphertext, shared_secret_key)
             except Exception as e:
                 print("Message from server wasn't formatted correctly")
                 print('Error: ' + str(e))
-<<<<<<< HEAD
-                auth_error = True
-                return None
-
-=======
                 auth_res.error = True
                 return
-
->>>>>>> 2cec4399d656cc7c6a11795933a0f80fcbcfd4cd
+            
             try:
                 plaintext = pickle.loads(plaintext)
                 server_msg = plaintext[0]
@@ -137,19 +117,9 @@ class Authentication:
                 return
 
             # Calculate newly established session key
-<<<<<<< HEAD
-            dh = pow(B, a_int, p)
-            print('Client: session key - ' + str(dh))
-            logging.info('Client: session key - ' + str(dh))
-
-            return dh
-
-
-=======
             auth_res.dh = pow(B, a_int, p)
             auth_res.error = False
             print('Client: session key - ' + str(auth_res.dh))
->>>>>>> 2cec4399d656cc7c6a11795933a0f80fcbcfd4cd
 
         # Server Mode
         else:
@@ -241,20 +211,10 @@ class Authentication:
             except Exception as e:
                 print("Message from client wasn't formatted correctly")
                 print(e)
-<<<<<<< HEAD
-                auth_error = True
-                return None
-
-            dh = pow(A, b_int, p)
-            print('Server: session key - ' + str(dh))
-            logging.info('Server: session key - ' + str(dh))
-            return dh
-=======
                 auth_res.error = True
-                return
+                return 
 
             auth_res.dh = pow(A, b_int, p)
             auth_res.error = False
             print('Server: session key - ' + str(auth_res.dh))
             return
->>>>>>> 2cec4399d656cc7c6a11795933a0f80fcbcfd4cd
