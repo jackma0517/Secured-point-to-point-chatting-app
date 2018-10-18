@@ -125,24 +125,28 @@ class Application(tk.Frame):
         # Shared secret key
         self.lbl_secret_key = tk.Label(master=self.fr_msg_boxes,
                                         text='Shared Secret Key:')
-        self.lbl_secret_key.pack()
-        self.txt_secret_key = ScrolledText(master=self.fr_msg_boxes)
-        self.txt_secret_key.config(width=100, height=4)
-        self.txt_secret_key.pack()
+        self.lbl_secret_key.pack(side="left")
+        self.txt_secret_key = Text(master=self.fr_msg_boxes)
+        self.txt_secret_key.config(width=80, height=1)
+        self.txt_secret_key.pack(side="left")
 
         # TODO: Default secret key, remove
         self.txt_secret_key.insert('end-1c', 'abc')
 
+        # frame for data to be send
+        self.fr_data = tk.Frame(self)
+        self.fr_data.pack()
+
         # Data to be sent
-        self.lbl_sent = tk.Label(master=self.fr_msg_boxes,
+        self.lbl_sent = tk.Label(master=self.fr_data,
                                         text='Data to be Sent:')
         self.lbl_sent.pack()
-        self.txt_sent = ScrolledText(master=self.fr_msg_boxes)
+        self.txt_sent = ScrolledText(master=self.fr_data)
         self.txt_sent.config(width=100, height=4)
         self.txt_sent.pack()
 
         # Send Button
-        self.send_button = tk.Button(master=self.fr_msg_boxes,
+        self.send_button = tk.Button(master=self.fr_data,
                                         text='SEND', fg='green',
                                         command=self.send_message)
         self.send_button.place(rely=2.0, relx=2.0, x=0, y=0, anchor=tk.SE)
@@ -150,10 +154,10 @@ class Application(tk.Frame):
 
 
         # Data Recieved
-        self.lbl_received = tk.Label(master=self.fr_msg_boxes,
+        self.lbl_received = tk.Label(master=self.fr_data,
                                         text='Data Received:')
         self.lbl_received.pack()
-        self.txt_received = ScrolledText(master=self.fr_msg_boxes, state='disabled')
+        self.txt_received = ScrolledText(master=self.fr_data, state='disabled')
         self.txt_received.config(width=100, height=4)
         self.txt_received.pack()
 
@@ -183,23 +187,27 @@ class Application(tk.Frame):
         self.debug_button_txt = tk.StringVar()
         self.debug_button_txt.set("Debug Mode ON")
         self.btn_debug_toggle = tk.Button(master=self.fr_step, textvariable=self.debug_button_txt, command=self.toggle_debug)
-        self.btn_debug_toggle.pack(side='left')
+        self.btn_debug_toggle.pack(side='top')
 
         # Debug Continue Button
         self.debug_continue_button = tk.Button(master=self.fr_step, text='Continue', command=self.step)
-        self.debug_continue_button.pack(side='right')
+        self.debug_continue_button.pack(side='top')
         self.debug_continue_button.config(state='normal')
 
         # Gimpy hack to push the quit button downwards
         self.fr_space = tk.Frame(self)
-        self.fr_space.config(height = 100)
+        self.fr_space.config(height = 50)
         self.fr_space.pack()
 
         # End Me
-        self.quit = tk.Button(self, text='QUIT', fg='red', command=root.destroy)
-        self.quit.place(rely=1.0, relx=1.0, x=0, y=0, anchor=tk.SE)
-        self.quit.pack()
+        self.quit = tk.Button(self, text='QUIT', fg='red', command=root.destroy, height=1, width=15)
+        self.quit.place(anchor=tk.SE)
+        self.quit.pack(side="top")#, fill='both', expand=True, padx=4, pady=4)
 
+        # Gimpy hack to get some space below the button
+        self.fr_space2 = tk.Frame(self)
+        self.fr_space2.config(height = 20)
+        self.fr_space2.pack()
 
     def consume(self, root):
         """
