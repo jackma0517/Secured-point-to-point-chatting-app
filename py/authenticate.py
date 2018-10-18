@@ -79,9 +79,9 @@ class Authentication:
                 rb         = resp[0]
                 ciphertext = resp[1]
                 # hmac       = resp[2]
-                # if (get_hmac(rb + ciphertext) != hmac):
-                #     print("HMAC didn't match")
-                #     return None
+                # if (verify_hmac(ciphertext, hmac, shared_secret_key)):
+                #     print("HMAC is incorrect")
+                #     return None 
                 plaintext = Encryption.decrypt(ciphertext, shared_secret_key)
                 print('plaintext:')
                 print(plaintext)
@@ -224,9 +224,9 @@ class Authentication:
                 resp = pickle.loads(resp)
                 ciphertext = resp[0]
                 hmac       = resp[1]
-                if (hmac != get_hmac(ciphertext, shared_secret_key)):
-                    print("HMAC is incorrect")
-                    return None 
+                # if (verify_hmac(ciphertext, hmac, shared_secret_key)):
+                #     print("HMAC is incorrect")
+                #     return None 
                 plaintext  = Encryption.decrypt(ciphertext, shared_secret_key)
                 plaintext  = pickle.load(plaintext)
                 client_msg = plaintext[0]
