@@ -19,7 +19,7 @@ class Sender(threading.Thread):
             if not self.queue.empty():
                 msg = self.queue.get()
                 try:
-                    self.socket.send(msg.encode())
+                    self.socket.send(msg)
                     print('Sender sent msg successfuly')
                 except socket.error:
                     print('Sender socket error')
