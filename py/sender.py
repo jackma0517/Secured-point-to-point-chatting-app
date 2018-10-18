@@ -22,7 +22,9 @@ class Sender(threading.Thread):
             if not self.queue.empty():
                 msg = self.queue.get()
                 if self.authentication:
-                    msg = Encryption.encryptPack(msg, self.key)
+                    #dont use hmac version
+                    #msg = Encryption.encryptPack(msg, self.key)
+                    msg = Encryption.encrypt(msg,self.key)
                 try:
                     self.socket.send(msg)
                     print('Sender sent msg successfuly')
