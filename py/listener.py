@@ -1,22 +1,22 @@
-
 import threading
 
+class ServerListener(threading.Thread):
 
-class Listener(threading.Thread):
-
-    def __init__(self, socket, port, conn_socket):
-        print('Initializing UI Thread')
+    def __init__(self, socket, socket_handler):
         threading.Thread.__init__(self)
         self.socket = socket
-        self.port = port
-        self.conn_socket = conn_socket
+        self.cb_function = socket_handler
+        self.is_listening = True
 
     def run(self):
-        print('UI waiting for connection')
+        print('ServerListener: waiting for connection')
         self.socket.listen()
-        print('Server listening on: ' + str(self.port))
         while True:
-            c, _ = self.socket.accept()
-            self.conn_socket = c
-            print('Server connected to client')
-            break
+            if self.is_listening:
+                c, _ = self.socket.accept()
+                self.cb_function(c)
+                self.is_listening = False
+    
+    def accept_new_connection(self):
+        self.is_listening = True
+

@@ -9,7 +9,7 @@ from tkinter import messagebox
 
 from receiver import Receiver
 from sender import Sender
-from listener import Listener
+from listener import ServerListener
 import server
 import client
 import text_handler
@@ -49,17 +49,16 @@ class Application(tk.Frame):
         self.receiver_q = queue.Queue()
         self.sender_q = queue.Queue()
 
+        self.server_listener = None
+
         ############################
         # Authentication Variables #
         ############################
         self.auth_res = AuthResult()
         self.dh = None
-
         self.authentication = Authentication()
 
         self.debug = True
-        self.server_listening = None
-
 
     def is_initialized(self):
         """
@@ -206,8 +205,9 @@ class Application(tk.Frame):
         This is where we start reading/writing to/from the
         Receiver and Sender
         """
-        if self.is_initialized():
-            if (self.config.state == State.DISCONNECTED):
+        if (self.config.state != State.DISCONNECTED):
+            if (self.config.state == State.UNSECURED_CONN):
+                logging.info('Connected over unsecured network. Authenticating...')
                 self.auth_res = AuthResult()
                 # If we are disconnected, we run authentication on a thread.
                 # TODO: Use the secret key rather than 'abc'
@@ -217,12 +217,17 @@ class Application(tk.Frame):
                                         self.sender_q,      # sender queue
                                         self.config.mode,   # SERVER vs CLIENT mode
                                         self.auth_res       # Contains authentication results
-                                     )).start()
+                                        )).start()
                 self.config.state = State.AUTHENTICATING
             elif (self.config.state == State.AUTHENTICATING and self.auth_res.error == True):
                 # If we are authenticating and we come into an error,
                 # we reset back to the disconnected state and re-try authentication
+                logging.info('Authentication failed')
                 self.config.state = State.DISCONNECTED
+                self.receiver = None
+                self.sender = None
+                if (self.config.mode == Mode.SERVER):
+                    self.server_listener.accept_new_connection()
             elif (self.config.state == State.AUTHENTICATING and
                     self.auth_res.error == False and
                     self.auth_res.dh is None) :
@@ -233,6 +238,7 @@ class Application(tk.Frame):
                 self.auth_res.dh is not None):
                 # We are authentication, now we can send encrypted messages
                 # back and forth
+                logging.info('Authentication successful')
                 self.config.state = State.AUTHENTICATED
                 self.dh = self.auth_res.dh
                 self.receiver.completeAuthentication(self.dh)
@@ -258,6 +264,7 @@ class Application(tk.Frame):
         self.receiver.start()
         self.sender = Sender(self.conn_socket, self.sender_q)
         self.sender.start()
+        self.config.state = State.UNSECURED_CONN
 
 
     def client_connect(self):
@@ -276,34 +283,27 @@ class Application(tk.Frame):
             s.connect((ip, int(port)))
             self.conn_socket = s
             self.bootstrap_connection()
-            print('Client connected to server')
-            logging.info('Client connected to server')
         except ValueError:
             messagebox.showerror("Error", "Invlaid address/port number!")
+    
+    def server_accept_callback(self, socket):
+        self.conn_socket = socket
+        self.bootstrap_connection()
 
     def server_start(self):
         """
         Starts up the server
         """
         print('Starting server...')
+
         try:
             port = self.get_port()
             self.shared_key = self.get_shared_key()
             s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             s.bind(('', int(port)))
-            s.listen()
-            while True:
-                c, _ = s.accept()
-                print('Server socket got a connection!')
-                logging.info('Server connected to client')
-                self.conn_socket = c
-                self.bootstrap_connection()
-                break
-
-            # TODO: readd
-            # self.server_listening = Listener(s, port, self.conn_socket)
-            # self.server_listening.start()
+            self.server_listener = ServerListener(s, self.server_accept_callback)
+            self.server_listener.start()
         except ValueError:
             messagebox.showerror("Error", "Invalid port number!")
 
