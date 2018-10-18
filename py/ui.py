@@ -130,6 +130,9 @@ class Application(tk.Frame):
         self.txt_secret_key.config(width=100, height=4)
         self.txt_secret_key.pack()
 
+        # TODO: Default secret key, remove
+        self.txt_secret_key.insert('end-1c', 'abc')
+
         # Data to be sent
         self.lbl_sent = tk.Label(master=self.fr_msg_boxes,
                                         text='Data to be Sent:')
@@ -230,19 +233,19 @@ class Application(tk.Frame):
                 self.auth_res.dh is not None):
                 # We are authentication, now we can send encrypted messages
                 # back and forth
-                print('Authenticated!')
-                self.config.state == State.AUTHENTICATED
+                self.config.state = State.AUTHENTICATED
                 self.dh = self.auth_res.dh
-                print('UI Authenticated')
-                print('Key: ' + str(self.dh))
                 self.receiver.completeAuthentication(self.dh)
                 self.sender.completeAuthentication(self.dh)
-
             else:
                 print('Consuming...')
+                print('Rec queue size: ' + str(self.receiver_q.qsize()))
                 if not self.receiver_q.empty():
                     print('Receiving msg')
                     rec_msg = str(self.receiver_q.get())
+                    # Message is in bit format: b'hello world'
+                    # so we need to strip the first two and last char
+                    rec_msg = rec_msg[2:-1]
                     self.set_msg_to_be_received(rec_msg)
                     print(rec_msg)
         root.after(250, lambda: self.consume(root))
@@ -328,16 +331,9 @@ class Application(tk.Frame):
         self.str_mode.set(self.config.mode)
 
     def send_message(self):
-        # TODO: Wire this up the the Sender
-        if (self.config.mode == Mode.CLIENT):
-            sent_msg = self.get_msg_to_be_sent()
-            if (sent_msg):
-                self.sender_q.put(sent_msg)
-        else:
-            #Server Mode
-            sent_msg = self.get_msg_to_be_sent()
-            if (sent_msg):
-                self.sender_q.put(sent_msg)
+        sent_msg = self.get_msg_to_be_sent()
+        if (sent_msg):
+            self.sender_q.put(sent_msg)
 
 
     def toggle_debug(self):
@@ -373,7 +369,9 @@ class Application(tk.Frame):
         return self.txt_secret_key.get('1.0', 'end-1c')
 
     def set_msg_to_be_received(self, msg):
+        self.txt_received.config(state='normal')
         self.txt_received.insert('end-1c', msg)
+        self.txt_received.config(state='disabled')
 
 if __name__ == '__main__':
     root = tk.Tk()

@@ -119,7 +119,7 @@ class Authentication:
             # Calculate newly established session key
             auth_res.dh = pow(B, a_int, p)
             auth_res.error = False
-            print('Client: session key - ' + str(auth_res.dh))
+            #print('Client: session key - ' + str(auth_res.dh))
 
         # Server Mode
         else:
@@ -216,5 +216,5 @@ class Authentication:
 
             auth_res.dh = pow(A, b_int, p)
             auth_res.error = False
-            print('Server: session key - ' + str(auth_res.dh))
+            #print('Server: session key - ' + str(auth_res.dh))
             return

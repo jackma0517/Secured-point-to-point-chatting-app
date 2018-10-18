@@ -14,7 +14,11 @@ class Encryption:
     @staticmethod
     def encrypt(msg, key):
         #hash the key so any key can meet the requirement
-        keyHash = SHA256.new(key.encode()).digest() 
+        print('msg type: ' + str(type(msg)))
+        print('msg: ' + str(msg))
+        print('key type: ' + str(type(key)))
+        print('key: ' + str(key))
+        keyHash = SHA256.new(str(key).encode()).digest() 
         IV = Random.get_random_bytes(AES.block_size)
         AEShelper = AES.new(keyHash,AES.MODE_CBC, IV)
         #msg needs to be multiple of 16 bytes
@@ -23,7 +27,8 @@ class Encryption:
 
     @staticmethod
     def decrypt(cipherText, key):
-        keyHash = SHA256.new(key.encode()).digest() 
+        print('Decrypting ciphertext: ' +str(cipherText))
+        keyHash = SHA256.new(str(key).encode()).digest() 
         # first {block size} byte is IV
         IV = cipherText[0:AES.block_size]
         AEShelper = AES.new(keyHash, AES.MODE_CBC, IV)
@@ -36,7 +41,10 @@ class Encryption:
         msg = raw
         paddingLen = (AES.block_size - len(raw)) % AES.block_size
         for i in range(paddingLen):
-            msg += bytes([10])
+            if type(msg) is str:
+                msg += paddingChr
+            else:
+                msg += bytes([10])
         return msg
 
     @staticmethod
