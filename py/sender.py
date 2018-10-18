@@ -2,6 +2,7 @@ import socket
 import threading
 import struct
 import logging
+from encryption import Encryption
 
 class Sender(threading.Thread):
 
@@ -20,6 +21,8 @@ class Sender(threading.Thread):
         while (self.keep_alive):
             if not self.queue.empty():
                 msg = self.queue.get()
+                if self.authentication:
+                    msg = Encryption.encryptPack(msg, self.key)
                 try:
                     self.socket.send(msg)
                     print('Sender sent msg successfuly')

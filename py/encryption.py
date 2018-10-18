@@ -3,6 +3,8 @@ import base64
 from Crypto.Hash import SHA256
 from Crypto import Random
 from Crypto.Cipher import AES
+from hash_mac import get_hmac, verify_hmac
+import pickle
 
 paddingChr = '\n'
 
@@ -40,5 +42,23 @@ class Encryption:
     @staticmethod
     def trim(msg):
         msg = msg.rstrip()
+        return msg
+
+    @staticmethod
+    def encryptPack(msg,key):
+        cipherText = Encryption.encrypt(msg, key)
+        hmac = get_hmac(cipherText, key)
+        packedMsg = [hmac, cipherText]
+        return packedMsg
+
+    
+    @staticmethod
+    def decryptVerify(packedMsg,key):
+        unpackedMsg = pickle.load(packedMsg)
+        hmac = unpackedMsg[0]
+        cipherText = unpackedMsg[1]
+        msg = Encryption.decrypt(cipherText,key)
+        if not (verify_hmac(cipherText, hmac, key)):
+            msg += " (HMAC doesn't match)"
         return msg
 

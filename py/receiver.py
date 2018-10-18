@@ -3,7 +3,7 @@ import threading
 import errno
 import struct
 import logging
-
+from encryption import Encryption
 class Receiver(threading.Thread):
 
     def __init__(self, socket, queue):
@@ -23,6 +23,8 @@ class Receiver(threading.Thread):
             try:
                 data = self.socket.recv(1024)
                 if (data):
+                    if self.authentication:
+                        data = Encryption.decryptVerify(data, self.key)
                     print('Reciever received from socket: ' + str(data))
                     self.queue.put(data)
             except:
