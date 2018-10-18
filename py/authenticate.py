@@ -83,11 +83,6 @@ class Authentication:
                 #     print("HMAC is incorrect")
                 #     return None 
                 plaintext = Encryption.decrypt(ciphertext, shared_secret_key)
-                print('plaintext:')
-                print(plaintext)
-                ptext_real = pickle.loads(plaintext)
-                print(ptext_real)
-
             except Exception as e:
                 print("Message from server wasn't formatted correctly")
                 print('Error: ' + str(e))
@@ -95,7 +90,7 @@ class Authentication:
                 return None
             
             try:
-                plaintext = pickle.load(plaintext)
+                plaintext = pickle.loads(plaintext)
                 server_msg = plaintext[0]
                 ra_reply   = plaintext[1]
                 B          = int(plaintext[2])
@@ -119,16 +114,18 @@ class Authentication:
             #       Kab       : shared secret key between client and server
             #       HMAC      : HMAC of all previous bytes with shared secret key Kab
             a = Random.get_random_bytes(NUM_BYTES_DH)
-            a = int.from_bytes(a, byteorder='big')
-            print('Client: a generated ' + str(a))
-            A = pow(g, a, p)
-            plaintext  = [client_auth_str, rb, str(A)]
-            plaintext  = pickle.dumps(plaintext, protocl=0).decode()
+            a_int = int.from_bytes(a, byteorder='big')
+            print('Client: a generated ' + str(a_int))
+            A = pow(g, a_int, p)
+            print('Client: A generated ' + str(A))
+            plaintext  = [client_auth_str, rb, A]
+            plaintext  = pickle.dumps(plaintext)
             ciphertext = Encryption.encrypt(plaintext, shared_secret_key)
-            hmac       = get_hmac(ciphertext, shared_secret_key)
-            msg        = [ciphertext, hmac]
-            msg        = pickle.dumps(msg, protocol=0).decode()
-            print('Client: Generated ciphertext ' + ciphertext)
+            print('Client: ciphertext: ' + str(ciphertext))
+            #hmac       = get_hmac(ciphertext, shared_secret_key)
+            msg        = [ciphertext]#, hmac]
+            msg        = pickle.dumps(msg)
+            print('Client: Generated ciphertext ' + str(ciphertext))
             try:
                 sender_q.put(msg)#self, msg, True, TIMEOUT_DELAY)
             except:
@@ -137,7 +134,7 @@ class Authentication:
                 return None
 
             # Calculate newly established session key
-            dh = pow(a, B, p)
+            dh = pow(B, a_int, p)
             print('Client: session key - ' + str(dh))
 
             return dh
@@ -198,7 +195,7 @@ class Authentication:
             print('Server: ciphertext: ' + str(ciphertext))
             hmac       = get_hmac(str(rb) + str(ciphertext), shared_secret_key)
             msg        = [rb, ciphertext]#, hmac]
-            msg        = pickle.dumps(msg, protocol=0)
+            msg        = pickle.dumps(msg)
             print('Server: Message: ' + str(rb) + ',' + str(ciphertext))
             try:
                 sender_q.put(msg)#, msg, True, TIMEOUT_DELAY)
@@ -223,27 +220,29 @@ class Authentication:
             try:
                 resp = pickle.loads(resp)
                 ciphertext = resp[0]
-                hmac       = resp[1]
+                #hmac       = resp[1]
                 # if (verify_hmac(ciphertext, hmac, shared_secret_key)):
                 #     print("HMAC is incorrect")
                 #     return None 
                 plaintext  = Encryption.decrypt(ciphertext, shared_secret_key)
-                plaintext  = pickle.load(plaintext)
+                plaintext  = pickle.loads(plaintext)
                 client_msg = plaintext[0]
                 rb_reply   = plaintext[1]
                 A          = int(plaintext[2])
                 print('Server: ' + str(A))
-                print('Server: plaintext received: ' + plaintext)
+                print('Server: plaintext received: ' + str(plaintext))
                 if (client_msg != client_auth_str):
                     print("Message from client didn't say 'I'm client'")
                     return None
                 if (rb_reply != rb):
                     print("Reterned nonce rb_reply not equal sent nonce rb")
                     return None
-            except:
+            except Exception as e:
                 print("Message from client wasn't formatted correctly")
+                print(e)
                 auth_error = True
                 return None
             
-            dh = pow(b, A, p)
+            dh = pow(A, b_int, p)
+            print('Server: session key - ' + str(dh))
             return dh
