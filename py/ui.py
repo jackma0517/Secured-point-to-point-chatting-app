@@ -213,6 +213,9 @@ class Application(tk.Frame):
                 print(self.dh)
                 print('Authenticated!')
                 self.config.state == State.AUTHENTICATED
+                self.receiver.completeAuthentication(self.dh)
+                self.sender.completeAuthentication(self.dh)
+
             else:
                 print('Consuming...')
                 if not self.receiver_q.empty():

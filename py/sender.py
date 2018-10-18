@@ -12,6 +12,8 @@ class Sender(threading.Thread):
         self.queue = queue
         self.keep_alive = True
         self.socket.setblocking(False)
+        self.authentication = False
+        self.key = None
 
     def run(self):
         print('Sender Running')
@@ -24,6 +26,10 @@ class Sender(threading.Thread):
                 except socket.error:
                     print('Sender socket error')
         self.socket.close()
+
+    def completeAuthentication(self, key):
+            self.authentication = True
+            self.key = key
 
     def close(self):
         print('closing')

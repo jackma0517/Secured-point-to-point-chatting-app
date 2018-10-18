@@ -11,14 +11,14 @@ class Receiver(threading.Thread):
         threading.Thread.__init__(self)
         self.socket = socket
         self.queue = queue
-        
-        # TODO: What if we set to True?
         self.socket.setblocking(False) 
         self.keep_alive = True
+        self.authentication = False
+        self.key = None
 
     def run(self):
         print('Receiver Running')
-        # TODO: Does this work? 
+        
         while (self.keep_alive):
             try:
                 data = self.socket.recv(1024)
@@ -28,6 +28,10 @@ class Receiver(threading.Thread):
             except:
                 continue
             
+    def completeAuthentication(self, key):
+        self.authentication = True
+        self.key = key
+
 
     def close(self):
         print('closing')
