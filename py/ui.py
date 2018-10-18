@@ -12,10 +12,12 @@ from sender import Sender
 from listener import Listener
 import server
 import client
+import text_handler
 
 import socket
 import queue
 import threading
+import logging
 
 from authenticate import Authentication
 from encryption import Encryption
@@ -159,6 +161,16 @@ class Application(tk.Frame):
         self.txt_log.config(width=100, height=6, bg=root['bg'], state='normal')
         self.txt_log.pack()
 
+        self.text_handler = text_handler.TextHandler(self.txt_log)
+        # Logging configuration
+        logging.basicConfig(filename='test.log',
+            level=logging.INFO,
+            format='%(levelname)s - %(message)s')
+
+        # Add the handler to logger
+        logger = logging.getLogger()
+        logger.addHandler(self.text_handler)
+
         # Debug Toggle Button
         self.debug_button_txt = tk.StringVar()
         self.debug_button_txt.set("Debug Mode ON")
@@ -240,8 +252,6 @@ class Application(tk.Frame):
         Starts up the client
         """
         print('Client connect...')
-        # TODO: Move into its own thread?
-        #          this will block the UI thread
         try:
             port = self.get_port()
             ip = self.get_ip()
@@ -250,8 +260,8 @@ class Application(tk.Frame):
             s.connect((ip, int(port)))
             self.conn_socket = s
             self.bootstrap_connection()
-            print('Client connected to server')
-            self.display_executed_step("Connected to server")
+            #print('Client connected to server')
+            logging.info('Client connected to server')
         except ValueError:
             messagebox.showerror("Error", "Invlaid address/port number!")
 
@@ -268,7 +278,8 @@ class Application(tk.Frame):
             s.listen()
             while True:
                 c, _ = s.accept()
-                print('Server socket got a connection!')
+                #print('Server socket got a connection!')
+                logging.info('Server connected to client')
                 self.conn_socket = c
                 self.bootstrap_connection()
                 break

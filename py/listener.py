@@ -1,6 +1,7 @@
-
+import logging
 import threading
 
+import text_handler
 
 class Listener(threading.Thread):
 
@@ -12,11 +13,13 @@ class Listener(threading.Thread):
         self.conn_socket = conn_socket
 
     def run(self):
-        print('UI waiting for connection')
+        #print('UI waiting for connection')
+        logging.info('Waiting for connection')
         self.socket.listen()
         print('Server listening on: ' + str(self.port))
         while True:
             c, _ = self.socket.accept()
             self.conn_socket = c
             print('Server connected to client')
+            logging.info('Server connected to client')
             break
