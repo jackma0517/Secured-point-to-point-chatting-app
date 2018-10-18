@@ -143,7 +143,7 @@ class Application(tk.Frame):
         self.lbl_received = tk.Label(master=self.fr_msg_boxes,
                                         text='Data Received:')
         self.lbl_received.pack()
-        self.txt_received = ScrolledText(master=self.fr_msg_boxes)
+        self.txt_received = ScrolledText(master=self.fr_msg_boxes, state='disabled')
         self.txt_received.config(width=100, height=4)
         self.txt_received.pack()
 
@@ -240,16 +240,11 @@ class Application(tk.Frame):
         except ValueError:
             messagebox.showerror("Error", "Invlaid address/port number!")
 
-
-
-
     def server_start(self):
         """
         Starts up the server
         """
         print('Starting server...')
-        # TODO: Move into its own thread?
-        #          this will block the UI thread
         try:
             port = self.get_port()
             s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -257,6 +252,7 @@ class Application(tk.Frame):
             s.bind(('', int(port)))
             self.server_listening = Listener(s, port)
             self.server_listening.start()
+            self.showImg()
         except ValueError:
             messagebox.showerror("Error", "Invalid port number!")
 
@@ -329,6 +325,12 @@ class Application(tk.Frame):
 
     def set_msg_to_be_received(self, msg):
         self.txt_received.insert('end-1c', msg)
+
+    def showImg(self):
+        loadPhoto = PhotoImage(file='load.gif')
+        loadLabel = Label(root, image=loadPhoto)
+        loadLabel.img=loadPhoto
+        loadLabel.pack()
 
 if __name__ == '__main__':
     root = tk.Tk()
