@@ -12,10 +12,12 @@ from sender import Sender
 from listener import Listener
 import server
 import client
+import text_handler
 
 import socket
 import queue
 import threading
+import logging
 
 from authenticate import Authentication
 from encryption import Encryption
@@ -52,7 +54,7 @@ class Application(tk.Frame):
         ############################
         self.auth_res = AuthResult()
         self.dh = None
-        
+
         self.authentication = Authentication()
 
         self.debug = True
@@ -165,6 +167,15 @@ class Application(tk.Frame):
         self.txt_log.config(width=100, height=6, bg=root['bg'], state='normal')
         self.txt_log.pack()
 
+        self.text_handler = text_handler.TextHandler(self.txt_log)
+        # Logging configuration
+        logging.basicConfig(filename='test.log',
+            level=logging.INFO,
+            format='%(levelname)s - %(message)s')
+         # Add the handler to logger
+        logger = logging.getLogger()
+        logger.addHandler(self.text_handler)
+
         # Debug Toggle Button
         self.debug_button_txt = tk.StringVar()
         self.debug_button_txt.set("Debug Mode ON")
@@ -209,13 +220,13 @@ class Application(tk.Frame):
                 # If we are authenticating and we come into an error,
                 # we reset back to the disconnected state and re-try authentication
                 self.config.state = State.DISCONNECTED
-            elif (self.config.state == State.AUTHENTICATING and 
-                    self.auth_res.error == False and 
+            elif (self.config.state == State.AUTHENTICATING and
+                    self.auth_res.error == False and
                     self.auth_res.dh is None) :
                 # Still authenticating, don't do anything but wait
                 print('Still authenticating...')
-            elif (self.config.state == State.AUTHENTICATING and 
-                self.auth_res.error == False and 
+            elif (self.config.state == State.AUTHENTICATING and
+                self.auth_res.error == False and
                 self.auth_res.dh is not None):
                 # We are authentication, now we can send encrypted messages
                 # back and forth
@@ -262,7 +273,7 @@ class Application(tk.Frame):
             self.conn_socket = s
             self.bootstrap_connection()
             print('Client connected to server')
-            self.display_executed_step("Connected to server")
+            logging.info('Client connected to server')
         except ValueError:
             messagebox.showerror("Error", "Invlaid address/port number!")
 
@@ -280,6 +291,7 @@ class Application(tk.Frame):
             while True:
                 c, _ = s.accept()
                 print('Server socket got a connection!')
+                logging.info('Server connected to client')
                 self.conn_socket = c
                 self.bootstrap_connection()
                 break
@@ -340,7 +352,7 @@ class Application(tk.Frame):
 
     def step(self):
         print("next step")
-        self.display_executed_step("Step")
+        logging.info('Step')
 
     #######################
     # UI HELPER FUNCTIONS #
@@ -357,9 +369,6 @@ class Application(tk.Frame):
 
     def set_msg_to_be_received(self, msg):
         self.txt_received.insert('end-1c', msg)
-
-    def display_executed_step(self, step):
-        self.txt_log.insert('end-1c', step)
 
 if __name__ == '__main__':
     root = tk.Tk()
