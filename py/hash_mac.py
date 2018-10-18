@@ -3,20 +3,18 @@ import hashlib
 import hmac
 import base64
 
-def get_hmac(hmac_key, msg):
-    message = bytes(msg, 'utf-8')
-    hmackey = bytes(hmac_key, 'utf-8')
+def get_hmac(msg, key):
+    msg = bytes(msg, 'utf-8')
+    key = bytes(key, 'utf-8')
 
-    hash = hmac.new(hmackey, message, hashlib.sha256)
+    hash = hmac.new(key, msg, hashlib.sha256)
     return hash.hexdigest() #this hmac is 64
 
-def verify_hmac(hmac_key, ciphertext, shared_secret_key):
-    #get last block of ciphertext which is the HMAC
-    encrypted_hmac = ciphertext[-64:] #only the last block
-    hmacValue = Encryption.decrypt(encrypted_hmac, shared_secret_key)
+def verify_hmac(msg, hmac, key):
+    msg     = bytes(msg, 'utf-8')
+    key     = bytes(key, 'utf-8')
 
     #get expected hmac
-    plaintext = Encryption.decrypt(ciphertext[:-64], shared_secret_key)#everything except the last block
-    expected_hmac = get_hmac(hmac_key, plaintext)
+    expected_hmac = get_hmac(msg, key)
 
-    return hmac.compare_digest(expected_hmac, hmacValue)
+    return hmac.compare_digest(expected_hmac, hmac)
