@@ -7,11 +7,12 @@ class ServerListener(threading.Thread):
         self.socket = socket
         self.cb_function = socket_handler
         self.is_listening = True
+        self.keep_alive = True
 
     def run(self):
         print('ServerListener: waiting for connection')
         self.socket.listen()
-        while True:
+        while self.keep_alive:
             if self.is_listening:
                 c, _ = self.socket.accept()
                 self.cb_function(c)
@@ -19,4 +20,7 @@ class ServerListener(threading.Thread):
     
     def accept_new_connection(self):
         self.is_listening = True
+    
+    def close(self):
+        self.keep_alive = False
 

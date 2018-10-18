@@ -199,7 +199,7 @@ class Application(tk.Frame):
         self.fr_space.pack()
 
         # End Me
-        self.quit = tk.Button(self, text='QUIT', fg='red', command=root.destroy, height=1, width=15)
+        self.quit = tk.Button(self, text='QUIT', fg='red', command=lambda:self.program_quit(root), height=1, width=15)
         self.quit.place(anchor=tk.SE)
         self.quit.pack(side="top")#, fill='both', expand=True, padx=4, pady=4)
 
@@ -207,6 +207,19 @@ class Application(tk.Frame):
         self.fr_space2 = tk.Frame(self)
         self.fr_space2.config(height = 20)
         self.fr_space2.pack()
+    
+    def program_quit(self, root):
+        """
+        Closes the threads nicely on program exit
+        """
+        if (self.receiver != None):
+            self.receiver.close()
+        if (self.sender != None):
+            self.sender.close()
+        if (self.server_listener != None):
+            self.server_listener.close()
+        root.destroy()
+
 
     def consume(self, root):
         """
@@ -260,7 +273,7 @@ class Application(tk.Frame):
                     # Message is in bit format: b'hello world'
                     # so we need to strip the first two and last char
                     rec_msg = rec_msg[2:-1]
-                    self.set_msg_to_be_received(rec_msg)
+                    self.set_msg_to_be_received(rec_msg + '\n')
                     print(rec_msg)
         root.after(250, lambda: self.consume(root))
 

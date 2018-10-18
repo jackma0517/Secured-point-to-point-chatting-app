@@ -38,5 +38,4 @@ class Receiver(threading.Thread):
 
 
     def close(self):
-        print('closing')
         self.keep_alive = False
