@@ -19,7 +19,7 @@ import threading
 
 from authenticate import Authentication
 from encryption import Encryption
-from config import Mode, State
+from config import Mode, State, AuthResult
 
 
 # Maintains config in the program
@@ -46,12 +46,18 @@ class Application(tk.Frame):
         self.conn_socket = None
         self.receiver_q = queue.Queue()
         self.sender_q = queue.Queue()
+
+        ############################
+        # Authentication Variables #
+        ############################
+        self.auth_res = AuthResult()
         self.dh = None
-        self.auth_error = False
+        
+        self.authentication = Authentication()
+
         self.debug = True
         self.server_listening = None
 
-        self.authentication = Authentication()
 
     def is_initialized(self):
         """
@@ -188,6 +194,7 @@ class Application(tk.Frame):
         """
         if self.is_initialized():
             if (self.config.state == State.DISCONNECTED):
+                self.auth_res = AuthResult()
                 # If we are disconnected, we run authentication on a thread.
                 # TODO: Use the secret key rather than 'abc'
                 threading.Thread(target = self.authentication.authenticate,
@@ -195,24 +202,28 @@ class Application(tk.Frame):
                                         self.receiver_q,    # receiver queue
                                         self.sender_q,      # sender queue
                                         self.config.mode,   # SERVER vs CLIENT mode
-                                        self.dh,            # the diffie-hellman key
-                                        self.auth_error     # whether we errored out
+                                        self.auth_res       # Contains authentication results
                                      )).start()
                 self.config.state = State.AUTHENTICATING
-            elif (self.config.state == State.AUTHENTICATING and self.auth_error):
+            elif (self.config.state == State.AUTHENTICATING and self.auth_res.error == True):
                 # If we are authenticating and we come into an error,
                 # we reset back to the disconnected state and re-try authentication
                 self.config.state = State.DISCONNECTED
-                self.auth_error = False
-            elif (self.config.state == State.AUTHENTICATING and self.dh is None):
+            elif (self.config.state == State.AUTHENTICATING and 
+                    self.auth_res.error == False and 
+                    self.auth_res.dh is None) :
                 # Still authenticating, don't do anything but wait
                 print('Still authenticating...')
-            if (self.config.state == State.AUTHENTICATING and self.dh is not None):
+            elif (self.config.state == State.AUTHENTICATING and 
+                self.auth_res.error == False and 
+                self.auth_res.dh is not None):
                 # We are authentication, now we can send encrypted messages
                 # back and forth
-                print(self.dh)
                 print('Authenticated!')
                 self.config.state == State.AUTHENTICATED
+                self.dh = self.auth_res.dh
+                print('UI Authenticated')
+                print('Key: ' + str(self.dh))
                 self.receiver.completeAuthentication(self.dh)
                 self.sender.completeAuthentication(self.dh)
 

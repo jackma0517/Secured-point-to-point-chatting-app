@@ -9,3 +9,9 @@ class State:
     AUTHENTICATING = 'AUTHENTICATING'
     AUTHENTICATED = 'AUTHENTICATED'
     COMMUNICATING = 'COMMUNICATING'
+
+class AuthResult():
+    def __init__(self):
+        self.dh = None
+        self.error = False
+        self.note = None
