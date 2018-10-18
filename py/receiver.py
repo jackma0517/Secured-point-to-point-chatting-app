@@ -21,7 +21,7 @@ class Receiver(threading.Thread):
         # TODO: Does this work? 
         while (self.keep_alive):
             try:
-                data = self.socket.recv(1024).decode()
+                data = self.socket.recv(1024)
                 if (data):
                     print('Reciever received from socket: ' + str(data))
                     self.queue.put(data)
