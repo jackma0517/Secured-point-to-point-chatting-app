@@ -209,7 +209,7 @@ class Application(tk.Frame):
                 # If we are disconnected, we run authentication on a thread.
                 # TODO: Use the secret key rather than 'abc'
                 threading.Thread(target = self.authentication.authenticate,
-                                args=(  'abc',              # shared secret key
+                                args=(  self.shared_key,    # shared secret key
                                         self.receiver_q,    # receiver queue
                                         self.sender_q,      # sender queue
                                         self.config.mode,   # SERVER vs CLIENT mode
@@ -267,6 +267,7 @@ class Application(tk.Frame):
         try:
             port = self.get_port()
             ip = self.get_ip()
+            self.shared_key = self.get_shared_key()
             s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             s.connect((ip, int(port)))
@@ -284,6 +285,7 @@ class Application(tk.Frame):
         print('Starting server...')
         try:
             port = self.get_port()
+            self.shared_key = self.get_shared_key()
             s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             s.bind(('', int(port)))
@@ -366,6 +368,9 @@ class Application(tk.Frame):
 
     def get_msg_to_be_sent(self):
         return self.txt_sent.get('1.0', 'end-1c')
+
+    def get_shared_key(self):
+        return self.txt_secret_key.get('1.0', 'end-1c')
 
     def set_msg_to_be_received(self, msg):
         self.txt_received.insert('end-1c', msg)
