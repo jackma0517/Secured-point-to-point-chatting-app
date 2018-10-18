@@ -340,7 +340,7 @@ class Application(tk.Frame):
 
     def toggle_debug(self):
         if(self.debug == False):
-            self.debug_continue_button.config(state='noraml')
+            self.debug_continue_button.config(state='normal')
             self.debug_button_txt.set("Debug Mode ON")
             self.txt_log.config(state='normal')
             self.debug = True
