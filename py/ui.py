@@ -48,7 +48,7 @@ class Application(tk.Frame):
         self.sender_q = queue.Queue()
         self.dh = None
         self.auth_error = False
-        self.debug = False
+        self.debug = True
         self.server_listening = None
 
         self.authentication = Authentication()
@@ -142,7 +142,7 @@ class Application(tk.Frame):
         self.lbl_received = tk.Label(master=self.fr_msg_boxes,
                                         text='Data Received:')
         self.lbl_received.pack()
-        self.txt_received = ScrolledText(master=self.fr_msg_boxes)
+        self.txt_received = ScrolledText(master=self.fr_msg_boxes, state='disabled')
         self.txt_received.config(width=100, height=4)
         self.txt_received.pack()
 
@@ -156,21 +156,19 @@ class Application(tk.Frame):
                                     text='Encryption logging')
         self.lbl_log.pack()
         self.txt_log = ScrolledText(master=self.fr_step)
-        # TODO: Need to toggle state to normal and disabled when writing to...
-        self.txt_log.config(width=100, height=6, bg=root['bg'], state='disabled')
+        self.txt_log.config(width=100, height=6, bg=root['bg'], state='normal')
         self.txt_log.pack()
 
         # Debug Toggle Button
         self.debug_button_txt = tk.StringVar()
-        self.debug_button_txt.set("Debug Mode OFF")
+        self.debug_button_txt.set("Debug Mode ON")
         self.btn_debug_toggle = tk.Button(master=self.fr_step, textvariable=self.debug_button_txt, command=self.toggle_debug)
         self.btn_debug_toggle.pack(side='left')
 
         # Debug Continue Button
         self.debug_continue_button = tk.Button(master=self.fr_step, text='Continue', command=self.step)
         self.debug_continue_button.pack(side='right')
-        self.debug_continue_button.visible = False
-        self.debug_continue_button.config(state=DISABLED)
+        self.debug_continue_button.config(state='normal')
 
         # Gimpy hack to push the quit button downwards
         self.fr_space = tk.Frame(self)
@@ -202,7 +200,7 @@ class Application(tk.Frame):
                                      )).start()
                 self.config.state = State.AUTHENTICATING
             elif (self.config.state == State.AUTHENTICATING and self.auth_error):
-                # If we are authenticating and we come into an error, 
+                # If we are authenticating and we come into an error,
                 # we reset back to the disconnected state and re-try authentication
                 self.config.state = State.DISCONNECTED
                 self.auth_error = False
@@ -253,19 +251,15 @@ class Application(tk.Frame):
             self.conn_socket = s
             self.bootstrap_connection()
             print('Client connected to server')
+            self.display_executed_step("Connected to server")
         except ValueError:
             messagebox.showerror("Error", "Invlaid address/port number!")
-
-
-
 
     def server_start(self):
         """
         Starts up the server
         """
         print('Starting server...')
-        # TODO: Move into its own thread?
-        #          this will block the UI thread
         try:
             port = self.get_port()
             s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -314,25 +308,23 @@ class Application(tk.Frame):
 
     def toggle_debug(self):
         if(self.debug == False):
-            self.debug_continue_button.config(state=NORMAL)
+            self.debug_continue_button.config(state='noraml')
             self.debug_button_txt.set("Debug Mode ON")
             self.txt_log.config(state='normal')
             self.debug = True
         else:
-            self.debug_continue_button.config(state=DISABLED)
+            self.debug_continue_button.config(state='disabled')
             self.debug_button_txt.set("Debug Mode OFF")
             self.txt_log.config(state='disabled')
             self.debug = False
 
     def step(self):
         print("next step")
+        self.display_executed_step("Step")
 
     #######################
     # UI HELPER FUNCTIONS #
     ######################
-
-    def display_received_message(self, response):
-        self.txt_received.insert("end-1c", response)
 
     def get_port(self):
         return self.txt_port.get('1.0', 'end-1c')
@@ -345,6 +337,9 @@ class Application(tk.Frame):
 
     def set_msg_to_be_received(self, msg):
         self.txt_received.insert('end-1c', msg)
+
+    def display_executed_step(self, step):
+        self.txt_log.insert('end-1c', step)
 
 if __name__ == '__main__':
     root = tk.Tk()
