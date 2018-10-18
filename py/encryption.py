@@ -47,18 +47,17 @@ class Encryption:
     @staticmethod
     def encryptPack(msg,key):
         cipherText = Encryption.encrypt(msg, key)
-        hmac = get_hmac(cipherText, key)
-        packedMsg = [hmac, cipherText]
+        #hmac = get_hmac(cipherText, key)
+        packedMsg = [cipherText]#, hmac]
         return packedMsg
-
     
     @staticmethod
     def decryptVerify(packedMsg,key):
         unpackedMsg = pickle.load(packedMsg)
-        hmac = unpackedMsg[0]
-        cipherText = unpackedMsg[1]
+        cipherText = unpackedMsg[0]
+        #hmac = unpackedMsg[1]
         msg = Encryption.decrypt(cipherText,key)
-        if not (verify_hmac(cipherText, hmac, key)):
-            msg += " (HMAC doesn't match)"
+        # if not (verify_hmac(cipherText, hmac, key)):
+        #     msg += " (HMAC doesn't match)"
         return msg
 
