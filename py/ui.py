@@ -231,9 +231,6 @@ class Application(tk.Frame):
         self.sender = Sender(self.conn_socket, self.sender_q)
         self.sender.start()
 
-        self.server_Listening = Listener()
-        self.server_Listening.start()
-
 
     def client_connect(self):
         """
@@ -265,8 +262,17 @@ class Application(tk.Frame):
             s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             s.bind(('', int(port)))
-            self.server_listening = Listener(s, port)
-            self.server_listening.start()
+            s.listen()
+            while True:
+                c, _ = s.accept()
+                print('Server socket got a connection!')
+                self.conn_socket = c
+                self.bootstrap_connection()
+                break
+
+            # TODO: readd
+            # self.server_listening = Listener(s, port, self.conn_socket)
+            # self.server_listening.start()
         except ValueError:
             messagebox.showerror("Error", "Invalid port number!")
 
