@@ -41,10 +41,9 @@ class Authentication:
             ra   = Random.get_random_bytes(NUM_BYTES_NONCE)
             msg  = [client_auth_str, ra]
             msg = pickle.dumps(msg)
-            wait_if_debug(token)
             logging.info("Message to send: " + client_auth_str + "," + str(ra))
+            wait_if_debug(token)
             try:
-                wait_if_debug(token)
                 sender_q.put(msg, True, TIMEOUT_DELAY)
             except :
                 auth_res.error = True
@@ -71,9 +70,9 @@ class Authentication:
                 resp       = pickle.loads(resp)
                 rb         = resp[0]
                 ciphertext = resp[1]
-                logging.info("Ciphertext received from server: " + str(ciphertext))
+                #logging.info("Ciphertext received from server: " + str(ciphertext))
                 plaintext = Encryption.decrypt(ciphertext, shared_secret_key)
-                wait_if_debug(token)
+                #wait_if_debug(token)
             except Exception as e:
                 logging.info("Message from server wasn't formatted correctly")
                 logging.info('Error: ' + str(e))
@@ -135,9 +134,10 @@ class Authentication:
                 return
 
             # Calculate newly established session key
-            auth_res.dh = pow(B, a_int, p)
-            logging.info("Session key: " + str(auth_res.dh))
+            session_key = pow(B, a_int, p)
+            logging.info("Session key: " + str(session_key))
             wait_if_debug(token)
+            auth_res.dh = session_key
             auth_res.error = False
 
         # Server Mode
@@ -260,8 +260,10 @@ class Authentication:
                 auth_res.error = True
                 return 
 
-            auth_res.dh = pow(A, b_int, p)
-            logging.info("Session key: " + str(auth_res.dh))
+            # Calculate newly established session key
+            session_key = pow(B, a_int, p)
+            logging.info("Session key: " + str(session_key))
             wait_if_debug(token)
+            auth_res.dh = session_key
             auth_res.error = False
             return

@@ -4,7 +4,7 @@ import errno
 import struct
 import logging
 from encryption import Encryption
-
+from debug import wait_if_debug, Token
 
 class Receiver(threading.Thread):
     """
@@ -14,7 +14,7 @@ class Receiver(threading.Thread):
     and inserting them into the queue
     """
 
-    def __init__(self, socket, queue):
+    def __init__(self, socket, queue, debug_token):
         logging.info('Initializing receiver thread...')
         threading.Thread.__init__(self)
         self.socket = socket
@@ -23,17 +23,21 @@ class Receiver(threading.Thread):
         self.keep_alive = True
         self.authentication = False
         self.key = None
+        self.debug_token = debug_token
 
     def run(self):
         while (self.keep_alive):
             try:
                 data = self.socket.recv(1024)
                 if (data):
+                    logging.info('RECEIVER: Recieved data: ' + str(data))
+                    wait_if_debug(self.debug_token)
                     if self.authentication:
                         #dont use hmac version
                         #data = Encryption.decryptVerify(data, self.key)
                         data = Encryption.decrypt(data, self.key)
-                    logging.info('Reciever received from socket: ' + str(data))
+                        logging.info('RECEIVER: Decrypted data: ' + str(data))
+                        wait_if_debug(self.debug_token)
                     self.queue.put(data)
             except Exception as e:
                 # Nonblocking socket will always throw an 

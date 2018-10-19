@@ -28,7 +28,7 @@ class Config:
     def __init__(self):
         self.state = State.DISCONNECTED
         self.mode = Mode.CLIENT
-        self.token = Token()
+        self.debug_token = Token()
         self.is_connected = False
 
 class Application(tk.Frame):
@@ -37,7 +37,7 @@ class Application(tk.Frame):
         super().__init__(master)
         self.pack()
         self.config = Config()
-        self.config.token.debug = True
+        self.config.debug_token.debug = True
 
         # String Variables
         self.str_mode = tk.StringVar()
@@ -239,7 +239,7 @@ class Application(tk.Frame):
                                         self.sender_q,      # sender queue
                                         self.config.mode,   # SERVER vs CLIENT mode
                                         self.auth_res,      # Contains authentication results
-                                        self.config.token   # Controller for debug and continue
+                                        self.config.debug_token   # Controller for debug and continue
                                         )).start()
                 self.config.state = State.AUTHENTICATING
             elif (self.config.state == State.AUTHENTICATING and self.auth_res.error == True):
@@ -285,9 +285,9 @@ class Application(tk.Frame):
         """
         Initializes the receiver and sender threads
         """
-        self.receiver = Receiver(self.conn_socket, self.receiver_q)
+        self.receiver = Receiver(self.conn_socket, self.receiver_q, self.config.debug_token)
         self.receiver.start()
-        self.sender = Sender(self.conn_socket, self.sender_q)
+        self.sender = Sender(self.conn_socket, self.sender_q, self.config.debug_token)
         self.sender.start()
         self.config.state = State.UNSECURED_CONN
 
@@ -368,19 +368,19 @@ class Application(tk.Frame):
 
 
     def toggle_debug(self):
-        if(self.config.token.debug == False):
+        if(self.config.debug_token.debug == False):
             self.debug_continue_button.config(state='normal')
             self.debug_button_txt.set("Debug Mode ON")
             self.txt_log.config(state='normal')
-            self.config.token.debug = True
+            self.config.debug_token.debug = True
         else:
             self.debug_continue_button.config(state='disabled')
             self.debug_button_txt.set("Debug Mode OFF")
             self.txt_log.config(state='disabled')
-            self.config.token.debug = False
+            self.config.debug_token.debug = False
 
     def step(self):
-        self.config.token.step_next = True
+        self.config.debug_token.step_next = True
 
     #######################
     # UI HELPER FUNCTIONS #
