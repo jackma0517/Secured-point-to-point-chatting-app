@@ -31,7 +31,6 @@ class Authentication:
         NUM_BYTES_DH    = 32 # Going for 256-bit a/b values in diffie-hellman
         NUM_BYTES_NONCE = 8  # Going for 64-bit nonce
         TIMEOUT_DELAY   = 5  # Timeout waiting on response after 5 seconds
-        print("Got here")
         logging.info('Authenticating')
 
         # Diffie-Hellman Group 14 2024-bit Key exchange values
@@ -169,15 +168,19 @@ class Authentication:
                 resp = pickle.loads(resp)
                 client_msg = resp[0]
                 ra         = resp[1]
-                logging.info("Message recieved from client: " + client_msg + "," + str(ra))
+                logging.info("Message recieved from client")
+                logging.info('Client message: ' + str(client_msg))
+                logging.info('ra: ' + str(ra))
                 self.wait_if_debug(debug, token)
                 if (client_msg != client_auth_str):
                     logging.info("Message from client didn't say 'I'm client'")
+                    self.wait_if_debug(debug, token)
                     auth_res.error = True
                     return
             except Exception as e:
                 logging.info("Message from client wasn't formatted correctly")
                 logging.info('Exception: ' + str(e))
+                self.wait_if_debug(debug, token)
                 auth_res.error = True
                 return
 
@@ -193,13 +196,16 @@ class Authentication:
             b_int = int.from_bytes(b, byteorder='big')
             B = pow(g, b_int, p)
             plaintext  = [server_auth_str, ra, B]
-            logging.info("Plaintext to be sent: " + str(rb) + "," + server_auth_str + "," + str(ra) + "," + str(B))
+            logging.info("Plaintext to be sent: ")
+            logging.info('rb: ' + str(rb))
+            logging.info('server_mgs: ' + server_auth_str)
+            logging.info('ra: ' + str(ra)) 
+            logging.info('B: ' + str(B))
             self.wait_if_debug(debug, token)
             plaintext  = pickle.dumps(plaintext)
             ciphertext = Encryption.encrypt(plaintext, shared_secret_key)
             msg        = [rb, ciphertext]
             msg        = pickle.dumps(msg)
-            self.wait_if_debug(debug, token)
             logging.info('Server: Message: ' + str(rb) + ',' + str(ciphertext))
             self.wait_if_debug(debug, token)
             try:
@@ -207,6 +213,7 @@ class Authentication:
                 logging.info("Sending message to client...")
             except:
                 logging.info("Timed out writing server's first message")
+                self.wait_if_debug(debug, token)
                 auth_res.error = True
                 return
 
@@ -223,6 +230,7 @@ class Authentication:
                     resp = receiver_q.get(True, TIMEOUT_DELAY)
             except:
                 logging.info("Timed out waiting for client's second message")
+                self.wait_if_debug(debug, token)
                 auth_res.error = True
                 return
             try:
@@ -235,19 +243,26 @@ class Authentication:
                 client_msg = plaintext[0]
                 rb_reply   = plaintext[1]
                 A          = int(plaintext[2])
-                logging.info('Plaintext received: ' + client_msg + "," + str(rb) + "," + str(A))
-                self.wait_if_debug(debug, token)
+                logging.info('Plaintext received: ')
+                logging.info('client_msg: ' + client_msg)
+                logging.info('rb: ' + str(rb))
+                logging.info('A: ' + str(A))
+                # TODO: For some reason adding the wait below would hang the system
+                #self.wait_if_debug(debug, token)
                 if (client_msg != client_auth_str):
                     logging.info("Message from client didn't say 'I'm client'")
+                    self.wait_if_debug(debug, token)
                     auth_res.error = True
                     return
                 if (rb_reply != rb):
                     logging.info("Returned nonce rb_reply not equal sent nonce rb")
+                    self.wait_if_debug(debug, token)
                     auth_res.error = True
                     return
             except Exception as e:
                 logging.info("Message from client wasn't formatted correctly")
                 logging.info(e)
+                self.wait_if_debug(debug, token)
                 auth_res.error = True
                 return 
 
