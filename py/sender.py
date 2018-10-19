@@ -33,8 +33,8 @@ class Sender(threading.Thread):
                 wait_if_debug(self.debug_token)
                 if self.authentication:
                     #dont use hmac version
-                    #msg = Encryption.encryptPack(msg, self.key)
-                    msg = Encryption.encrypt(msg ,self.key)
+                    msg = Encryption.encryptPack(msg, self.key)
+                    #msg = Encryption.encrypt(msg ,self.key)
                     logging.info('SENDING: Message encrypted: ' + str(msg))
                     wait_if_debug(self.debug_token)
                 try:

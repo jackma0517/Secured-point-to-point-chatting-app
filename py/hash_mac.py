@@ -3,17 +3,28 @@ import hmac
 import base64
 
 def get_hmac(msg, key):
-    msg = bytes(msg, 'utf-8')
-    key = bytes(key, 'utf-8')
+    if type(msg) is not bytes:
+        msg = bytes(msg, 'utf-8')
+    if type(key) is not bytes:
+        key = bytes(str(key), 'utf-8')
 
     hash = hmac.new(key, msg, hashlib.sha256)
     return hash.hexdigest() #this hmac is 64
 
 def verify_hmac(msg, hmac, key):
-    msg     = bytes(msg, 'utf-8')
-    key     = bytes(key, 'utf-8')
+    print('verifying hmac')
+    if type(msg) is not bytes:
+        msg = bytes(msg, 'utf-8')
+    if type(key) is not bytes:
+        key = bytes(str(key), 'utf-8')
+    print('msg and key has been byte-d')
 
     #get expected hmac
     expected_hmac = get_hmac(msg, key)
-
-    return hmac.compare_digest(expected_hmac, hmac)
+    print('expected hmac' + str(expected_hmac))
+    print('curr hmac' + str(hmac))
+    same = (hmac == expected_hmac)
+    print('manual comp: '+  str(same))
+    #hmac_cmp_dig = hmac.compare_digest(expected_hmac, hmac)
+    #print('cpm dig: ' + str(hmac_cmp_dig))
+    return same

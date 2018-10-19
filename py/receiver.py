@@ -34,10 +34,12 @@ class Receiver(threading.Thread):
                     wait_if_debug(self.debug_token)
                     if self.authentication:
                         #dont use hmac version
-                        #data = Encryption.decryptVerify(data, self.key)
-                        data = Encryption.decrypt(data, self.key)
+                        print('Receiver: about to decrypt data')
+                        data = Encryption.decryptVerify(data, self.key)
+                        #data = Encryption.decrypt(data, self.key)
                         logging.info('RECEIVER: Decrypted data: ' + str(data))
                         wait_if_debug(self.debug_token)
+                    print('Receiver: about to put data')
                     self.queue.put(data)
             except Exception as e:
                 # Nonblocking socket will always throw an 

@@ -61,16 +61,23 @@ class Encryption:
         cipherText = Encryption.encrypt(msg, key)
         hmac = get_hmac(cipherText, key)
         packedMsg = [cipherText, hmac]
+        packedMsg = pickle.dumps(packedMsg)
         return packedMsg
     
     #unpack the ciphtext+hmac, and decrypt and verify the hmac
     @staticmethod
     def decryptVerify(packedMsg,key):
-        unpackedMsg = pickle.load(packedMsg)
+        print('in decrypt verify')
+        print('unpickling...')
+        unpackedMsg = pickle.loads(packedMsg)
+        print('unpickled')
         cipherText = unpackedMsg[0]
         hmac = unpackedMsg[1]
+        print('about to decrypt...')
         msg = Encryption.decrypt(cipherText,key)
+        print('decrypted')
         if not (verify_hmac(cipherText, hmac, key)):
              msg += " (HMAC doesn't match)"
+        print('returning')
         return msg
 
