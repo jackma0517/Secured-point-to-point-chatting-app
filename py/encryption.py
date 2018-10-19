@@ -5,6 +5,7 @@ from Crypto import Random
 from Crypto.Cipher import AES
 from hash_mac import get_hmac, verify_hmac
 import pickle
+import logging
 
 paddingChr = '\n'
 
@@ -14,37 +15,39 @@ class Encryption:
     @staticmethod
     def encrypt(msg, key):
         #hash the key so any key can meet the requirement
-        print('msg type: ' + str(type(msg)))
-        print('msg: ' + str(msg))
-        print('key type: ' + str(type(key)))
-        print('key: ' + str(key))
+        logging.info('Encrypting message: ' + str(msg))
         keyHash = SHA256.new(str(key).encode()).digest() 
         IV = Random.get_random_bytes(AES.block_size)
         AEShelper = AES.new(keyHash,AES.MODE_CBC, IV)
         #msg needs to be multiple of 16 bytes
         cipherText = IV + AEShelper.encrypt(Encryption.padding(msg))
+        logging.info('Encrypted message: ' + str(cipherText))
         return cipherText
 
     @staticmethod
     def decrypt(cipherText, key):
-        print('Decrypting ciphertext: ' +str(cipherText))
+        logging.info('Decrypting message: ' + str(cipherText))
         keyHash = SHA256.new(str(key).encode()).digest() 
         # first {block size} byte is IV
         IV = cipherText[0:AES.block_size]
         AEShelper = AES.new(keyHash, AES.MODE_CBC, IV)
         msg = AEShelper.decrypt(cipherText[AES.block_size:])
         #should handle padding
-        return Encryption.trim(msg)
+        plainText = Encryption.trim(msg)
+        logging.info('Decrypted message:' + str(plainText))
+        return plainText
 
     @staticmethod
     def padding(raw):
         msg = raw
+        logging.info('Message length before padding: ' + str(len(msg)))
         paddingLen = (AES.block_size - len(raw)) % AES.block_size
         for i in range(paddingLen):
             if type(msg) is str:
                 msg += paddingChr
             else:
                 msg += bytes([10])
+        logging.info('Message length after padding: ' + str(len(msg)))
         return msg
 
     @staticmethod
