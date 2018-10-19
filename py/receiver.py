@@ -36,7 +36,11 @@ class Receiver(threading.Thread):
                     logging.info('Reciever received from socket: ' + str(data))
                     self.queue.put(data)
             except Exception as e:
-                logging.info('Receiver exception: ' + str(e))
+                # Nonblocking socket will always throw an 
+                # exception here, it can't be separated since it
+                # is propagated from the underlying implementation. 
+                # So we're ignoring exceptions here for now
+                # logging.info('Receiver exception: ' + str(e))
                 continue
             
     def completeAuthentication(self, key):
