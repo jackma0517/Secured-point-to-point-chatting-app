@@ -4,10 +4,17 @@ import struct
 import logging
 from encryption import Encryption
 
+
 class Sender(threading.Thread):
+    """
+    This thread abstracts all the socket communication between
+    the client and the server using a queue. 
+    It is responsible for sending all the messages in the queue
+    through the socket.
+    """
 
     def __init__(self, socket, queue):
-        print('Initializing Sender')
+        logging.info('Initializing sender thread...')
         threading.Thread.__init__(self)
         self.socket = socket
         self.queue = queue
@@ -17,7 +24,6 @@ class Sender(threading.Thread):
         self.key = None
 
     def run(self):
-        print('Sender Running')
         while (self.keep_alive):
             if not self.queue.empty():
                 msg = self.queue.get()
@@ -26,10 +32,10 @@ class Sender(threading.Thread):
                     #msg = Encryption.encryptPack(msg, self.key)
                     msg = Encryption.encrypt(msg,self.key)
                 try:
+                    logging.info('Sender sending message: ' + str(msg))
                     self.socket.send(msg)
-                    print('Sender sent msg successfuly')
-                except socket.error:
-                    print('Sender socket error')
+                except socket.error as e:
+                    logging.error('Socket error' + str(e))
         self.socket.close()
 
     def completeAuthentication(self, key):
@@ -37,5 +43,4 @@ class Sender(threading.Thread):
             self.key = key
 
     def close(self):
-        print('closing')
         self.keep_alive = False
