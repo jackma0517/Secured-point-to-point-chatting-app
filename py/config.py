@@ -17,6 +17,3 @@ class AuthResult():
         self.error = False
         self.note = None
 
-class Token():
-    def __init__(self):
-        self.step_next = False

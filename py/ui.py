@@ -19,7 +19,8 @@ import logging
 
 from authenticate import Authentication
 from encryption import Encryption
-from config import Mode, State, AuthResult, Token
+from config import Mode, State, AuthResult
+from debug import Token
 
 
 # Maintains config in the program
@@ -36,6 +37,7 @@ class Application(tk.Frame):
         super().__init__(master)
         self.pack()
         self.config = Config()
+        self.config.token.debug = True
 
         # String Variables
         self.str_mode = tk.StringVar()
@@ -56,8 +58,6 @@ class Application(tk.Frame):
         self.auth_res = AuthResult()
         self.dh = None
         self.authentication = Authentication()
-
-        self.debug = True
 
 
     def is_initialized(self):
@@ -239,8 +239,7 @@ class Application(tk.Frame):
                                         self.sender_q,      # sender queue
                                         self.config.mode,   # SERVER vs CLIENT mode
                                         self.auth_res,      # Contains authentication results
-                                        self.debug,         # Whether we are in step mode
-                                        self.config.token   # Controller for stepping
+                                        self.config.token   # Controller for debug and continue
                                         )).start()
                 self.config.state = State.AUTHENTICATING
             elif (self.config.state == State.AUTHENTICATING and self.auth_res.error == True):
@@ -369,16 +368,16 @@ class Application(tk.Frame):
 
 
     def toggle_debug(self):
-        if(self.debug == False):
+        if(self.config.token.debug == False):
             self.debug_continue_button.config(state='normal')
             self.debug_button_txt.set("Debug Mode ON")
             self.txt_log.config(state='normal')
-            self.debug = True
+            self.config.token.debug = True
         else:
             self.debug_continue_button.config(state='disabled')
             self.debug_button_txt.set("Debug Mode OFF")
             self.txt_log.config(state='disabled')
-            self.debug = False
+            self.config.token.debug = False
 
     def step(self):
         self.config.token.step_next = True
