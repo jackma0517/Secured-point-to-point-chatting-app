@@ -207,7 +207,7 @@ class Application(tk.Frame):
         self.fr_space2 = tk.Frame(self)
         self.fr_space2.config(height = 20)
         self.fr_space2.pack()
-    
+
     def program_quit(self, root):
         """
         Closes the threads nicely on program exit
@@ -297,24 +297,26 @@ class Application(tk.Frame):
         """
         Starts up the client
         """
-        print("client connecting")
-        logging.info('Client connecting...')
         # TODO: Move into its own thread?
         #          this will block the UI thread
         try:
             port = self.get_port()
             ip = self.get_ip()
+            if(ip == ''):
+                ValueError
             self.shared_key = self.get_shared_key()
+            logging.info('Client connecting...')
             s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             s.connect((ip, int(port)))
             self.conn_socket = s
             self.bootstrap_connection()
         except ValueError:
-            logging.info('Invalid address/port number!')
+            messagebox.showerror("Error", "Invalid address/port number!")
+            logging.info('Connection Failed!')
         except ConnectionRefusedError:
             logging.info('Connection Failed!')
-    
+
     def server_accept_callback(self, socket):
         self.conn_socket = socket
         self.bootstrap_connection()
@@ -335,6 +337,7 @@ class Application(tk.Frame):
             self.server_listener.start()
         except ValueError:
             messagebox.showerror("Error", "Invalid port number!")
+            logging.info('Setup Failed!')
 
 
     def toggle_mode(self):
