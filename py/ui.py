@@ -59,6 +59,7 @@ class Application(tk.Frame):
 
         self.debug = True
 
+
     def is_initialized(self):
         """
         Checks whether connections are initialized
@@ -169,7 +170,7 @@ class Application(tk.Frame):
                                     text='Encryption logging')
         self.lbl_log.pack()
         self.txt_log = ScrolledText(master=self.fr_step)
-        self.txt_log.config(width=100, height=6, bg=root['bg'], state='normal')
+        self.txt_log.config(width=100, height=25, bg=root['bg'], state='normal')
         self.txt_log.pack()
 
         self.text_handler = text_handler.TextHandler(self.txt_log)
@@ -255,7 +256,9 @@ class Application(tk.Frame):
                     self.auth_res.error == False and
                     self.auth_res.dh is None) :
                 # Still authenticating, don't do anything but wait
-                print('Still authenticating...')
+                pass
+                # Printing lags the world my dude
+                #print('Still authenticating...')
             elif (self.config.state == State.AUTHENTICATING and
                 self.auth_res.error == False and
                 self.auth_res.dh is not None):
@@ -267,16 +270,16 @@ class Application(tk.Frame):
                 self.receiver.completeAuthentication(self.dh)
                 self.sender.completeAuthentication(self.dh)
             else:
-                print('Consuming...')
-                print('Rec queue size: ' + str(self.receiver_q.qsize()))
+                #print('Consuming...')
+                #print('Rec queue size: ' + str(self.receiver_q.qsize()))
                 if not self.receiver_q.empty():
-                    print('Receiving msg')
+                    #print('Receiving msg')
                     rec_msg = str(self.receiver_q.get())
                     # Message is in bit format: b'hello world'
                     # so we need to strip the first two and last char
                     rec_msg = rec_msg[2:-1]
                     self.set_msg_to_be_received(rec_msg + '\n')
-                    print(rec_msg)
+                    #print(rec_msg)
         root.after(250, lambda: self.consume(root))
 
     def bootstrap_connection(self):
@@ -376,7 +379,6 @@ class Application(tk.Frame):
 
     def step(self):
         self.config.token.step_next = True
-        self.config.token.step_next = False
 
     #######################
     # UI HELPER FUNCTIONS #

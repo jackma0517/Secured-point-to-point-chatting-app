@@ -16,8 +16,9 @@ class Authentication:
 
     def wait_if_debug(self, debug, token):
         if (debug):
+            logging.info('Press continue to step')
             while (not token.step_next):
-                pass
+                continue
             token.step_next = False
         return
 
@@ -49,14 +50,13 @@ class Authentication:
             msg = pickle.dumps(msg)
             self.wait_if_debug(debug, token)
             logging.info("Message to send: " + client_auth_str + "," + str(ra))
-
             try:
+                self.wait_if_debug(debug, token)
                 sender_q.put(msg, True, TIMEOUT_DELAY)
-                logging.info("Sending message to server...")
             except :
                 auth_res.error = True
-                self.wait_if_debug(debug, token)
                 logging.info("Timed out writing client's first message")
+                return
 
             # Expect server response in the form:
             # "rb, E("server_msg, ra, B", Kab)"
@@ -74,14 +74,13 @@ class Authentication:
                 auth_res.error = True
                 self.wait_if_debug(debug, token)
                 logging.info("Timed out waiting for server's first reply")
-
             try:
                 resp       = pickle.loads(resp)
                 rb         = resp[0]
                 ciphertext = resp[1]
                 logging.info("Ciphertext received from server: " + str(ciphertext))
                 plaintext = Encryption.decrypt(ciphertext, shared_secret_key)
-
+                self.wait_if_debug(debug, token)
             except Exception as e:
                 logging.info("Message from server wasn't formatted correctly")
                 logging.info('Error: ' + str(e))
@@ -93,9 +92,11 @@ class Authentication:
                 server_msg = plaintext[0]
                 ra_reply   = plaintext[1]
                 B          = int(plaintext[2])
+                logging.info("Plaintext received: ")
+                logging.info('Server message: ' + str(server_msg))
+                logging.info('ra returned: ' + str(ra_reply))
+                logging.info('Server B: ' + str(B))
                 self.wait_if_debug(debug, token)
-                logging.info("Plaintext received: " + str(server_msg) + "," + str(ra_reply) + "," + str(B))
-
                 if (server_msg != server_auth_str):
                     logging.info("Message from server didn't say 'I'm server'")
                     auth_res.error = True
@@ -107,6 +108,7 @@ class Authentication:
             except Exception as e:
                 logging.info("Message from server wasn't formatted correctly")
                 logging.info('Error: ' + str(e))
+                self.wait_if_debug(debug, token)
                 auth_res.error = True
                 return
 
@@ -120,12 +122,15 @@ class Authentication:
             a_int = int.from_bytes(a, byteorder='big')
             A = pow(g, a_int, p)
             plaintext  = [client_auth_str, rb, A]
+            logging.info("Plaintext to be sent: ")
+            logging.info('Client message: ' + str(client_auth_str))
+            logging.info('rb returned : ' + str(rb))
+            logging.info('Client A: ' + str(A))
             self.wait_if_debug(debug, token)
-            logging.info("Plaintext to be sent: " + client_auth_str + "," + str(rb) + "," + str(A))
             plaintext  = pickle.dumps(plaintext)
             ciphertext = Encryption.encrypt(plaintext, shared_secret_key)
-            self.wait_if_debug(debug, token)
             logging.info("Ciphertext to be sent: " + str(ciphertext))
+            self.wait_if_debug(debug, token)
             msg        = [ciphertext]
             msg        = pickle.dumps(msg)
             try:
@@ -138,9 +143,9 @@ class Authentication:
 
             # Calculate newly established session key
             auth_res.dh = pow(B, a_int, p)
-            auth_res.error = False
-            self.wait_if_debug(debug, token)
             logging.info("Session key: " + str(auth_res.dh))
+            self.wait_if_debug(debug, token)
+            auth_res.error = False
 
         # Server Mode
         else:
@@ -164,8 +169,8 @@ class Authentication:
                 resp = pickle.loads(resp)
                 client_msg = resp[0]
                 ra         = resp[1]
-                #hmac       = resp[2]
                 logging.info("Message recieved from client: " + client_msg + "," + str(ra))
+                self.wait_if_debug(debug, token)
                 if (client_msg != client_auth_str):
                     logging.info("Message from client didn't say 'I'm client'")
                     auth_res.error = True
@@ -186,20 +191,17 @@ class Authentication:
             rb = Random.get_random_bytes(NUM_BYTES_NONCE)
             b = Random.get_random_bytes(NUM_BYTES_DH)
             b_int = int.from_bytes(b, byteorder='big')
-            logging.info('Server generated b:' + str(b_int))
             B = pow(g, b_int, p)
-            logging.info('Server generated B: ' + str(B))
             plaintext  = [server_auth_str, ra, B]
-            self.wait_if_debug(debug, token)
             logging.info("Plaintext to be sent: " + str(rb) + "," + server_auth_str + "," + str(ra) + "," + str(B))
+            self.wait_if_debug(debug, token)
             plaintext  = pickle.dumps(plaintext)
             ciphertext = Encryption.encrypt(plaintext, shared_secret_key)
-            self.wait_if_debug(debug, token)
-            logging.info("Ciphertext to be sent: " + str(auth_res.dh))
             msg        = [rb, ciphertext]
             msg        = pickle.dumps(msg)
             self.wait_if_debug(debug, token)
             logging.info('Server: Message: ' + str(rb) + ',' + str(ciphertext))
+            self.wait_if_debug(debug, token)
             try:
                 sender_q.put(msg, True, TIMEOUT_DELAY)
                 logging.info("Sending message to client...")
@@ -226,14 +228,15 @@ class Authentication:
             try:
                 resp = pickle.loads(resp)
                 ciphertext = resp[0]
+                logging.info('Ciphertext received: ' + str(ciphertext))
+                self.wait_if_debug(debug, token)
                 plaintext  = Encryption.decrypt(ciphertext, shared_secret_key)
                 plaintext  = pickle.loads(plaintext)
                 client_msg = plaintext[0]
                 rb_reply   = plaintext[1]
                 A          = int(plaintext[2])
-                logging.info('Ciphertext received: ' + str(ciphertext))
-                self.wait_if_debug(debug, token)
                 logging.info('Plaintext received: ' + client_msg + "," + str(rb) + "," + str(A))
+                self.wait_if_debug(debug, token)
                 if (client_msg != client_auth_str):
                     logging.info("Message from client didn't say 'I'm client'")
                     auth_res.error = True
@@ -249,7 +252,7 @@ class Authentication:
                 return 
 
             auth_res.dh = pow(A, b_int, p)
-            auth_res.error = False
-            self.wait_if_debug(debug, token)
             logging.info("Session key: " + str(auth_res.dh))
+            self.wait_if_debug(debug, token)
+            auth_res.error = False
             return
