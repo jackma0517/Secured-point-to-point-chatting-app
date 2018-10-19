@@ -55,6 +55,7 @@ class Encryption:
         msg = msg.rstrip()
         return msg
 
+    #Encrypt and get HMAC value, pack to one message
     @staticmethod
     def encryptPack(msg,key):
         cipherText = Encryption.encrypt(msg, key)
@@ -62,6 +63,7 @@ class Encryption:
         packedMsg = [cipherText, hmac]
         return packedMsg
     
+    #unpack the ciphtext+hmac, and decrypt and verify the hmac
     @staticmethod
     def decryptVerify(packedMsg,key):
         unpackedMsg = pickle.load(packedMsg)
