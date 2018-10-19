@@ -261,7 +261,7 @@ class Authentication:
                 return 
 
             # Calculate newly established session key
-            session_key = pow(B, a_int, p)
+            session_key = pow(A, b_int, p)
             logging.info("Session key: " + str(session_key))
             wait_if_debug(token)
             auth_res.dh = session_key
