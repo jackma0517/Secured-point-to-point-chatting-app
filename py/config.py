@@ -16,3 +16,7 @@ class AuthResult():
         self.dh = None
         self.error = False
         self.note = None
+
+class Token():
+    def __init__(self):
+        self.step_next = False
