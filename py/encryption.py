@@ -20,7 +20,7 @@ class Encryption:
         IV = Random.get_random_bytes(AES.block_size)
         AEShelper = AES.new(keyHash,AES.MODE_CBC, IV)
         #msg needs to be multiple of 16 bytes
-        cipherText = IV + AEShelper.encrypt(Encryption.padding(msg))
+        cipherText = (IV + AEShelper.encrypt(Encryption.padding(msg)))
         #logging.info('Encrypted message: ' + str(cipherText))
         return cipherText
 

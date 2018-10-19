@@ -364,7 +364,7 @@ class Application(tk.Frame):
     def send_message(self):
         sent_msg = self.get_msg_to_be_sent()
         if (sent_msg):
-            self.sender_q.put(sent_msg)
+            self.sender_q.put(sent_msg.encode("utf8"))
 
 
     def toggle_debug(self):
