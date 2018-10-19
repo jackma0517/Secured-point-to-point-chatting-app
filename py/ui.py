@@ -9,9 +9,7 @@ from tkinter import messagebox
 
 from receiver import Receiver
 from sender import Sender
-from listener import ServerListener
-import server
-import client
+from ServerListener import ServerListener
 import text_handler
 
 import socket
@@ -21,7 +19,7 @@ import logging
 
 from authenticate import Authentication
 from encryption import Encryption
-from config import Mode, State, AuthResult
+from config import Mode, State, AuthResult, Token
 
 
 # Maintains config in the program
@@ -29,6 +27,7 @@ class Config:
     def __init__(self):
         self.state = State.DISCONNECTED
         self.mode = Mode.CLIENT
+        self.token = Token()
         self.is_connected = False
 
 class Application(tk.Frame):
@@ -228,6 +227,7 @@ class Application(tk.Frame):
         """
         if (self.config.state != State.DISCONNECTED):
             if (self.config.state == State.UNSECURED_CONN):
+                print("starting authentication")
                 logging.info('Connected over unsecured network. Authenticating...')
                 self.auth_res = AuthResult()
                 # If we are disconnected, we run authentication on a thread.
@@ -237,7 +237,9 @@ class Application(tk.Frame):
                                         self.receiver_q,    # receiver queue
                                         self.sender_q,      # sender queue
                                         self.config.mode,   # SERVER vs CLIENT mode
-                                        self.auth_res       # Contains authentication results
+                                        self.auth_res,      # Contains authentication results
+                                        self.debug,         # Whether we are in step mode
+                                        self.config.token   # Controller for stepping
                                         )).start()
                 self.config.state = State.AUTHENTICATING
             elif (self.config.state == State.AUTHENTICATING and self.auth_res.error == True):
@@ -292,7 +294,8 @@ class Application(tk.Frame):
         """
         Starts up the client
         """
-        print('Client connect...')
+        print("client connecting")
+        logging.info('Client connecting...')
         # TODO: Move into its own thread?
         #          this will block the UI thread
         try:
@@ -305,7 +308,9 @@ class Application(tk.Frame):
             self.conn_socket = s
             self.bootstrap_connection()
         except ValueError:
-            messagebox.showerror("Error", "Invlaid address/port number!")
+            logging.info('Invalid address/port number!')
+        except ConnectionRefusedError:
+            logging.info('Connection Failed!')
     
     def server_accept_callback(self, socket):
         self.conn_socket = socket
@@ -315,7 +320,7 @@ class Application(tk.Frame):
         """
         Starts up the server
         """
-        print('Starting server...')
+        logging.info('Starting server...')
 
         try:
             port = self.get_port()
@@ -370,8 +375,8 @@ class Application(tk.Frame):
             self.debug = False
 
     def step(self):
-        print("next step")
-        logging.info('Step')
+        self.config.token.step_next = True
+        self.config.token.step_next = False
 
     #######################
     # UI HELPER FUNCTIONS #
